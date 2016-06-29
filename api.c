@@ -49,48 +49,46 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	curl_easy_setopt(hc, CURLOPT_WRITEFUNCTION, crl_callback);
 	curl_easy_setopt(hc, CURLOPT_WRITEDATA, (void *) fetch_str);
 	curl_easy_setopt(hc, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-	curl_easy_setopt(hc, CURLOPT_TIMEOUT, 5);
-	curl_easy_setopt(hc, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(hc, CURLOPT_MAXREDIRS, 1);
+//	curl_easy_setopt(hc, CURLOPT_TIMEOUT, 5);
+//	curl_easy_setopt(hc, CURLOPT_FOLLOWLOCATION, 1);
+//	curl_easy_setopt(hc, CURLOPT_MAXREDIRS, 1);
 	curl_easy_setopt(hc, CURLOPT_VERBOSE, CRL_VERBOSITY);
 	code = curl_easy_perform(hc);
 	return code;
 }
 
 char *
-vk_api( const char * url)
+vk_api( const char * url )
 {
+	/* struct initialiisation */
+	CURLcode code;
+	struct crl_st wk_crl_st;
+	struct crl_st * cf = &wk_crl_st;
+
 	/* handler initialisatiion */
 	CURL * hc;
 	hc = curl_easy_init();
 	if ( hc == NULL )
 	{
 		fprintf( stderr, "cURL initialisation error\n" );
-		return "err";
+		return "err1";
 	}
 
-	curl_easy_setopt(hc, CURLOPT_VERBOSE, 0L);
-
 	/* fetching an answer */
-	CURLcode code;
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
 	code = crl_fetch( hc, url, cf );
 	curl_easy_cleanup(hc);
 
+	/* checking result */
 	if (code != CURLE_OK || cf->size < 1)
 	{
 		fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
-		return "err";
+		return "err2";
 	}
-
-
 	if (!cf->payload)
 	{
 		fprintf( stderr, "Callback is empty, nothing to do here\n");
-		return "err";
+		return "err3";
 	}
 
 	return cf->payload;
 }
-
