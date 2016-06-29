@@ -69,7 +69,7 @@ user( char * name )
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "No such user (%s).\n", usr.screenname );
+		fprintf( stderr, "No such user (%s).\n\n", usr.screenname );
 		usr.is_ok = -2;
 		return usr;
 	}
@@ -122,7 +122,7 @@ group( char * name )
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "No such group (%s).\n", grp.screenname );
+		fprintf( stderr, "No such group (%s).\n\n", grp.screenname );
 		grp.is_ok = -2;
 		return grp;
 	}
