@@ -1,24 +1,13 @@
-#include <json-c/json.h>
 #include <stdarg.h>
-#include <stdlib.h>
-#include "config.h"
-#include "api.c"
+#include "methods.c"
 
 int
 main()
 {
-	char * url = "https://api.vk.com/method/users.get?user_ids=teuprime";
-	printf("making request to %s\n", url);
-
-	char * r = vk_api(url);
-
-	printf("callback: %s", r);
+	struct data_user usr;
+	usr = user("teuprime");
+	if ( usr.is_ok == 0 )
+		printf("User: %s %s\nUser ID: %lld\nIs hidden: %lld\n", usr.fname, usr.lname, usr.uid, usr.hidden);
 
 	return 0;
 }
-
-
-
-//	json_object * json;
-//	enum json_tokener_error jerr = json_tokener_success;
-//	json = json_tokener_parse_verbose(cf->payload, &jerr);

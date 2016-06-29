@@ -1,6 +1,8 @@
 #include <curl/curl.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include "config.h"
 
 struct crl_st
 {
@@ -50,7 +52,7 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	curl_easy_setopt(hc, CURLOPT_TIMEOUT, 5);
 	curl_easy_setopt(hc, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(hc, CURLOPT_MAXREDIRS, 1);
-
+	curl_easy_setopt(hc, CURLOPT_VERBOSE, CRL_VERBOSITY);
 	code = curl_easy_perform(hc);
 	return code;
 }
