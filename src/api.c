@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "config.h"
+#include "../config.h"
 
 struct crl_st
 {
