@@ -8,4 +8,5 @@
  */
 #define TOKEN access_token=blahblahblah
 
+/* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L

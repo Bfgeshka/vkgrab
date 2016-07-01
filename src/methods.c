@@ -67,7 +67,7 @@ user( char * name )
 	json = json_loads( r, 0, &json_err );
 	if ( !json )
 	{
-		fprintf( stderr, "JSON user parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 		usr.is_ok = -1;
 		return usr;
 	}
@@ -77,7 +77,7 @@ user( char * name )
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "No such user (%s).\n\n", usr.screenname );
+		fprintf( stderr, "No such user (%s).\n", usr.screenname );
 		usr.is_ok = -2;
 		return usr;
 	}
@@ -115,7 +115,7 @@ group( char * name )
 	json = json_loads( r, 0, &json_err );
 	if ( !json )
 	{
-		fprintf( stderr, "JSON group parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		fprintf( stderr, "JSON groups.getById parsing error.\n%d:%s\n", json_err.line, json_err.text );
 		grp.is_ok = -1;
 		return grp;
 	}
@@ -125,7 +125,7 @@ group( char * name )
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "No such group (%s).\n\n", grp.screenname );
+		fprintf( stderr, "No such group (%s).\n", grp.screenname );
 		grp.is_ok = -2;
 		return grp;
 	}
