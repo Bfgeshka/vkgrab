@@ -57,7 +57,7 @@ user( char * name )
 	char * url = NULL;
 	url = malloc( bufs );
 	sprintf(url, "https://api.vk.com/method/users.get?user_ids=%s", name);
-	char * r = vk_api(url);
+	char * r = vk_get_request(url);
 	free(url);
 
 //	printf("%s\n", r);
@@ -105,7 +105,7 @@ group( char * name )
 	url = malloc( bufs );
 	strcpy( url, "https://api.vk.com/method/groups.getById?group_id=" );
 	strcat( url, name );
-	char * r = vk_api(url);
+	char * r = vk_get_request(url);
 	free(url);
 
 //	printf("%s\n", r);

@@ -57,8 +57,17 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	return code;
 }
 
+size_t
+write_file(void * ptr, size_t size, size_t nmemb, FILE * stream)
+{
+	size_t written;
+	written = fwrite(ptr, size, nmemb, stream);
+	return written;
+}
+
+
 char *
-vk_api( const char * url )
+vk_get_request( const char * url )
 {
 	/* struct initialiisation */
 	CURLcode code;
@@ -91,4 +100,35 @@ vk_api( const char * url )
 	}
 
 	return cf->payload;
+}
+
+size_t
+vk_get_file( const char * url, const char * filepath )
+{
+	CURL * curl;
+	curl = curl_easy_init();
+
+	if (curl)
+	{
+		FILE * fp;
+		CURLcode code;
+		fp = fopen( filepath, "w" );
+
+		curl_easy_setopt(curl, CURLOPT_URL, url);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+		curl_easy_setopt (curl, CURLOPT_VERBOSE, CRL_VERBOSITY);
+		code = curl_easy_perform(curl);
+
+		curl_easy_cleanup(curl);
+		fclose(fp);
+
+		if (code != CURLE_OK)
+		{
+			fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
+			return 1;
+		}
+	}
+
+	return 0;
 }
