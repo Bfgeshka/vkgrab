@@ -14,7 +14,7 @@ clean:
 	rm -f ${NAME}
 
 install:
-	sudo cp -i ${NAME} ${PREFIX}/bin
+	cp -i ${NAME} ${PREFIX}/bin
 
 uninstall:
-	sudo rm -i ${PREFIX}/bin/${NAME}
+	rm -i ${PREFIX}/bin/${NAME}
