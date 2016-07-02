@@ -15,7 +15,7 @@ get_albums( long long id, CURL * curl )
 	/* getting albums */
 	char *url = NULL;
 	url = malloc( bufs );
-	sprintf(url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1", id);
+	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s", id, TOKEN );
 	char * r;
 	r = vk_get_request(url, curl);
 	free(url);
@@ -46,14 +46,14 @@ get_albums( long long id, CURL * curl )
 	{
 		json_t * el;
 		size_t index;
-		printf("Albums: %lu\n", (unsigned long) arr_size);
+		printf("\nAlbums: %lu\n", (unsigned long) arr_size);
 		albums = malloc( arr_size * sizeof(struct data_album) );
 		json_array_foreach( rsp, index, el )
 		{
 			albums[index].aid = js_get_int(el, "aid");
 			albums[index].size = js_get_int(el, "size");
 			strncpy( albums[index].title, js_get_str(el, "title" ), bufs);
-			printf("Album: %s\n\tid: %lld, #: %lld\n", albums[index].title, albums[index].aid, albums[index].size);
+			printf( "Album: %s (id:%lld, #:%lld)\n", albums[index].title, albums[index].aid, albums[index].size );
 			photos_count += albums[index].size;
 		}
 	}
@@ -96,12 +96,12 @@ get_id( int argc, char ** argv, CURL * curl )
 	if ( usr.is_ok == 0 )
 	{
 		id = usr.uid;
-		printf("User: %s %s (%s)\nUser ID: %lld\nIs hidden: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid, usr.hidden);
+		printf( "User: %s %s (%s)\nUser ID: %lld\nIs hidden: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid, usr.hidden );
 	}
 	else if ( grp.is_ok == 0 )
 	{
 		id = - grp.gid;
-		printf("Group: %s (%s)\nGroup ID: %lld\nType: %s\nIs closed: %lld\n\n", grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed);
+		printf( "Group: %s (%s)\nGroup ID: %lld\nType: %s\nIs closed: %lld\n\n", grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed );
 	}
 
 	return id;
@@ -139,7 +139,7 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 					sprintf( alchar, "%lld[%s]", albums[i].aid, albums[i].title );
 
 				/* creating request */
-				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d", id, albums[i].aid, offset * LIMIT_A );
+				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s", id, albums[i].aid, offset * LIMIT_A, TOKEN );
 				char * r;
 				r = vk_get_request( url, curl );
 //						printf("%s\n", r);
@@ -198,13 +198,7 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 					/* downloading */
 					sprintf( curpath, "%s/%s/%lld.jpg", path, alchar, pid );
 					printf( "%s\n", curpath );
-		//			FILE * current = fopen( curpath, "r" );
-		//			if ( errno == 0 )
-		//			{
-		//				fclose( current );
-						vk_get_file( fileurl, curpath, curl );
-		//			}
-		//			fclose( current );
+					vk_get_file( fileurl, curpath, curl );
 				}
 			}
 		}
@@ -216,11 +210,138 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 }
 
 void
-get_wall( long long id, char * path )
+get_wall( long long id, char * path, CURL * curl )
 {
+	/* char allocation */
+	char * url;
+	char * curpath;
+	char * posts_path;
+	char * attach_path;
+	const char * fileurl;
+	url = malloc( bufs );
+	curpath = malloc( bufs );
+	posts_path = malloc( bufs );
+	attach_path = malloc( bufs );
 
+	sprintf( curpath, "%s/%s", path, "wall_attachments" );
+	sprintf( posts_path, "%s/%s", path, "posts.txt" );
+	FILE * posts = fopen( posts_path, "w" );
+
+	if ( mkdir( curpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+		if ( errno != EEXIST )
+			fprintf(stderr, "mkdir() error (%d).\n", errno);
+
+	/* starting loop */
+	int offset = 0;
+	long long posts_count = 0;
+	do
+	{
+		sprintf(url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s", id, LIMIT_W, offset, TOKEN);
+		char * r;
+		r = vk_get_request( url, curl );
+
+		/* JSON init */
+		json_t * json;
+		json_error_t json_err;
+		json = json_loads( r, 0, &json_err );
+		if ( !json )
+			fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+		/* simplifying json */
+		json_t * rsp;
+		rsp = json_object_get( json, "response" );
+		if (!rsp)
+		{
+			fprintf( stderr, "Wall error\n" );
+			rsp = json_object_get( json, "error" );
+			fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		}
+
+		/* getting posts count */
+		if ( offset == 0 )
+		{
+			json_t * temp_json;
+			temp_json = json_array_get( rsp, 0 );
+			posts_count = json_integer_value( temp_json );
+			printf("Posts: %lld\n", posts_count);
+		}
+
+		/* iterations in array */
+		size_t index;
+		json_t * el;
+		json_t * biggest;
+		json_t * photo_el;
+		long long pid;
+		long long p_date;
+		long long p_id;
+
+		json_array_foreach( rsp, index, el )
+		{
+			if ( index != 0 || offset != 0 )
+			{
+				p_id = js_get_int( el, "id" );
+				p_date = js_get_int( el, "date" );
+				fprintf( posts, "ID: %lld\nEPOCH: %lld\nText: %s\n", p_id, p_date, js_get_str(el, "text") );
+
+				json_t * att_json;
+				json_t * att_el;
+				size_t att_index;
+				att_json = json_object_get( el, "attachments" );
+				if (att_json)
+				{
+					json_array_foreach( att_json, att_index, att_el );
+					{
+						photo_el = json_object_get( att_el, "photo" );
+						if ( photo_el )
+						{
+							pid = js_get_int( photo_el, "pid" );
+							fprintf( posts, "Photo for %lld: %lld\n", p_id, pid);
+							biggest = json_object_get( photo_el, "src_xxxbig" );
+							if ( biggest )
+								fileurl = json_string_value( biggest );
+							else
+							{
+								biggest = json_object_get( photo_el, "src_xxbig" );
+								if ( biggest )
+									fileurl = json_string_value( biggest );
+								else
+								{
+									biggest = json_object_get( photo_el, "src_xbig" );
+									if ( biggest )
+										fileurl = json_string_value( biggest );
+									else
+									{
+										biggest = json_object_get( photo_el, "src_big" );
+										if ( biggest )
+											fileurl = json_string_value( biggest );
+										else
+											continue;
+									}
+								}
+							}
+
+							/* downloading */
+							sprintf( attach_path, "%s/%lld.jpg", curpath, pid );
+							printf( "%s\n", attach_path );
+							vk_get_file( fileurl, attach_path, curl );
+						}
+					}
+				}
+				fprintf(posts, "------\n\n");
+			}
+
+
+		}
+
+		offset += LIMIT_W;
+	}
+	while( posts_count - offset > 0 );
+
+	free( url );
+	free( curpath );
+	free( posts_path );
+	fclose( posts );
 }
-
 
 int
 main( int argc, char ** argv )
@@ -230,6 +351,8 @@ main( int argc, char ** argv )
 
 	/* Checking id */
 	long long id = get_id( argc, argv, curl );
+	if ( id == 0 )
+		return 2;
 	char user_dir[bufs];
 	if ( usr.is_ok == 0 )
 		sprintf( user_dir, "%s(%lld)_%s_%s", usr.screenname, usr.uid, usr.fname, usr.lname);
@@ -245,6 +368,9 @@ main( int argc, char ** argv )
 		if ( errno != EEXIST )
 			fprintf(stderr, "mkdir() error (%d).\n", errno);
 
+	/* Getting wall content */
+	get_wall( id, user_dir, curl );
+
 	/* Getting albums content */
 	size_t arr_size = get_albums( id, curl );
 	if ( arr_size > 0 )
@@ -252,10 +378,6 @@ main( int argc, char ** argv )
 		get_albums_files( id, arr_size, user_dir, curl );
 		free(albums);
 	}
-
-//	get_wall( id, user_dir );
-
-
 
 	curl_easy_cleanup(curl);
 	return 0;

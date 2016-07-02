@@ -111,9 +111,17 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 	{
 		/* skip downloading if file exists */
 		errno = 0;
+		int err;
 		FILE * fr = fopen( filepath, "r" );
-		if( errno != 0 )
+		err = errno;
+//		printf("%d, %d, %d\n", err, EACCES, EEXIST);
+		if ( fr )
+			fclose(fr);
+		else
+		if ( err == ENOENT )
 		{
+			//			printf("%d\n", ++i);
+
 			FILE * fw = fopen( filepath, "w");
 			curl_easy_setopt(curl, CURLOPT_URL, url);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
@@ -130,8 +138,8 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_reset( curl );
 			fclose(fw);
 		}
-
-		fclose(fr);
+//		else
+//			fclose(fr);
 	}
 
 	return 0;
