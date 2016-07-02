@@ -48,9 +48,6 @@ struct data_user
 user( char * name, CURL * curl )
 {
 	struct data_user usr;
-//	usr.fname = malloc( bufs );
-//	usr.lname = malloc( bufs );
-//	usr.screenname = malloc( bufs );
 	strncpy( usr.screenname, name, bufs );
 	usr.is_ok = 0;
 
@@ -59,8 +56,6 @@ user( char * name, CURL * curl )
 	sprintf(url, "https://api.vk.com/method/users.get?user_ids=%s", name);
 	char * r = vk_get_request(url, curl);
 	free(url);
-
-//	printf("%s\n", r);
 
 	json_t * json;
 	json_error_t json_err;
@@ -107,8 +102,6 @@ group( char * name, CURL * curl )
 	strcat( url, name );
 	char * r = vk_get_request(url, curl);
 	free(url);
-
-//	printf("%s\n", r);
 
 	json_t * json;
 	json_error_t json_err;

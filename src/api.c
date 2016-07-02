@@ -75,18 +75,8 @@ vk_get_request( const char * url, CURL * hc )
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
 
-	/* handler initialisatiion */
-	//CURL * hc;
-	//hc = curl_easy_init();
-	if ( hc == NULL )
-	{
-		fprintf( stderr, "cURL initialisation error\n" );
-		return "err1";
-	}
-
 	/* fetching an answer */
 	code = crl_fetch( hc, url, cf );
-	//curl_easy_cleanup(hc);
 	curl_easy_reset( hc );
 
 	/* checking result */
@@ -114,14 +104,10 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		int err;
 		FILE * fr = fopen( filepath, "r" );
 		err = errno;
-//		printf("%d, %d, %d\n", err, EACCES, EEXIST);
 		if ( fr )
 			fclose(fr);
-		else
-		if ( err == ENOENT )
+		else if ( err == ENOENT )
 		{
-			//			printf("%d\n", ++i);
-
 			FILE * fw = fopen( filepath, "w");
 			curl_easy_setopt(curl, CURLOPT_URL, url);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
@@ -138,8 +124,6 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_reset( curl );
 			fclose(fw);
 		}
-//		else
-//			fclose(fr);
 	}
 
 	return 0;

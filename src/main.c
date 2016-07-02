@@ -11,7 +11,6 @@ long long photos_count = 0;
 size_t
 get_albums( long long id, CURL * curl )
 {
-//	long long photos_count = 0;
 	/* getting albums */
 	char *url = NULL;
 	url = malloc( bufs );
@@ -28,6 +27,7 @@ get_albums( long long id, CURL * curl )
 		fprintf( stderr, "JSON album parsing error.\n%d:%s\n", json_err.line, json_err.text );
 		return -1;
 	}
+
 	/* simplifying json */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
@@ -66,7 +66,6 @@ get_albums( long long id, CURL * curl )
 long long
 get_id( int argc, char ** argv, CURL * curl )
 {
-
 	long long id = 0;
 
 	if ( argc == 1 || argc > 3 )
@@ -78,6 +77,7 @@ get_id( int argc, char ** argv, CURL * curl )
 		puts("\tvk_grabber -g GROUP");
 		return 0;
 	}
+
 	/* getting id */
 	else if (argv[1][0] == '-')
 	{
@@ -119,13 +119,13 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 	long long pid;
 	int i;
 	const char * fileurl;
+
 	for( i = 0; i < arr_size; ++i )
 	{
 		if ( albums[i].size > 0 )
 		{
 			int offset;
 			int times = albums[i].size / LIMIT_A;
-//			printf("times = %d\n", times);
 			for ( offset = 0; offset <= times; ++offset)
 			{
 				/* common names for service albums */
@@ -142,7 +142,6 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s", id, albums[i].aid, offset * LIMIT_A, TOKEN );
 				char * r;
 				r = vk_get_request( url, curl );
-//						printf("%s\n", r);
 
 				/* creating album directory */
 				sprintf( curpath, "%s/%s", path, alchar );
@@ -329,8 +328,6 @@ get_wall( long long id, char * path, CURL * curl )
 				}
 				fprintf(posts, "------\n\n");
 			}
-
-
 		}
 
 		offset += LIMIT_W;
@@ -346,8 +343,14 @@ get_wall( long long id, char * path, CURL * curl )
 int
 main( int argc, char ** argv )
 {
+	/* curl handler initialisatiion */
 	CURL * curl;
 	curl = curl_easy_init();
+	if ( !curl )
+	{
+		fprintf( stderr, "curl initialisation error\n" );
+		return 3;
+	}
 
 	/* Checking id */
 	long long id = get_id( argc, argv, curl );
