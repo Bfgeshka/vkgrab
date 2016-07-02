@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "../config.h"
+#include <errno.h>
 
 struct crl_st
 {
@@ -67,7 +68,7 @@ write_file(void * ptr, size_t size, size_t nmemb, FILE * stream)
 
 
 char *
-vk_get_request( const char * url )
+vk_get_request( const char * url, CURL * hc )
 {
 	/* struct initialiisation */
 	CURLcode code;
@@ -75,8 +76,8 @@ vk_get_request( const char * url )
 	struct crl_st * cf = &wk_crl_st;
 
 	/* handler initialisatiion */
-	CURL * hc;
-	hc = curl_easy_init();
+	//CURL * hc;
+	//hc = curl_easy_init();
 	if ( hc == NULL )
 	{
 		fprintf( stderr, "cURL initialisation error\n" );
@@ -85,15 +86,16 @@ vk_get_request( const char * url )
 
 	/* fetching an answer */
 	code = crl_fetch( hc, url, cf );
-	curl_easy_cleanup(hc);
+	//curl_easy_cleanup(hc);
+	curl_easy_reset( hc );
 
 	/* checking result */
-	if (code != CURLE_OK || cf->size < 1)
+	if ( code != CURLE_OK || cf->size < 1 )
 	{
 		fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
 		return "err2";
 	}
-	if (!cf->payload)
+	if ( !cf->payload )
 	{
 		fprintf( stderr, "Callback is empty, nothing to do here\n");
 		return "err3";
@@ -103,31 +105,33 @@ vk_get_request( const char * url )
 }
 
 size_t
-vk_get_file( const char * url, const char * filepath )
+vk_get_file( const char * url, const char * filepath, CURL * curl )
 {
-	CURL * curl;
-	curl = curl_easy_init();
-
 	if (curl)
 	{
-		FILE * fp;
-		CURLcode code;
-		fp = fopen( filepath, "w" );
-
-		curl_easy_setopt(curl, CURLOPT_URL, url);
-		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-		curl_easy_setopt (curl, CURLOPT_VERBOSE, CRL_VERBOSITY);
-		code = curl_easy_perform(curl);
-
-		curl_easy_cleanup(curl);
-		fclose(fp);
-
-		if (code != CURLE_OK)
+		/* skip downloading if file exists */
+		errno = 0;
+		FILE * fr = fopen( filepath, "r" );
+		if( errno != 0 )
 		{
-			fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
-			return 1;
+			FILE * fw = fopen( filepath, "w");
+			curl_easy_setopt(curl, CURLOPT_URL, url);
+			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
+			curl_easy_setopt(curl, CURLOPT_WRITEDATA, fw);
+			curl_easy_setopt(curl, CURLOPT_VERBOSE, CRL_VERBOSITY);
+			CURLcode code;
+			code = curl_easy_perform(curl);
+
+			if ( code != CURLE_OK )
+			{
+				fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
+				return 1;
+			}
+			curl_easy_reset( curl );
+			fclose(fw);
 		}
+
+		fclose(fr);
 	}
 
 	return 0;

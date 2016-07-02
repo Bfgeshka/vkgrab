@@ -45,7 +45,7 @@ js_get_str( json_t * src, char * key )
 }
 
 struct data_user
-user( char * name )
+user( char * name, CURL * curl )
 {
 	struct data_user usr;
 //	usr.fname = malloc( bufs );
@@ -57,7 +57,7 @@ user( char * name )
 	char * url = NULL;
 	url = malloc( bufs );
 	sprintf(url, "https://api.vk.com/method/users.get?user_ids=%s", name);
-	char * r = vk_get_request(url);
+	char * r = vk_get_request(url, curl);
 	free(url);
 
 //	printf("%s\n", r);
@@ -95,7 +95,7 @@ user( char * name )
 }
 
 struct data_group
-group( char * name )
+group( char * name, CURL * curl )
 {
 	struct data_group grp;
 	grp.is_ok = 0;
@@ -105,7 +105,7 @@ group( char * name )
 	url = malloc( bufs );
 	strcpy( url, "https://api.vk.com/method/groups.getById?group_id=" );
 	strcat( url, name );
-	char * r = vk_get_request(url);
+	char * r = vk_get_request(url, curl);
 	free(url);
 
 //	printf("%s\n", r);

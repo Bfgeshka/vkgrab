@@ -1,12 +1,12 @@
 CC = cc
 SRC = src/main.c
 
-NAME = vk_grabber
+NAME = vkgrab
 
 CFLAGS = -g -O2 -Wall
 LDFLAGS = -ljansson -lcurl
 
-vk_grabber:
+${NAME}:
 	${CC} ${SRC} ${CFLAGS} ${LDFLAGS} -o ${NAME}
 
 clean:
