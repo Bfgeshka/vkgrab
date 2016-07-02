@@ -1,5 +1,5 @@
 # vkgrab
-realisation of VK API via libcurl &amp; json-c
+realisation of VK API via libcurl &amp; jansson
 
 ## usage
 ```
