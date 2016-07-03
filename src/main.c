@@ -196,7 +196,7 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 
 					/* downloading */
 					sprintf( curpath, "%s/%s/%lld.jpg", path, alchar, pid );
-					printf( "%s\n", curpath );
+					printf( "%s", curpath );
 					vk_get_file( fileurl, curpath, curl );
 				}
 			}
@@ -270,6 +270,7 @@ get_wall( long long id, char * path, CURL * curl )
 		json_t * el;
 		json_t * biggest;
 		json_t * photo_el;
+
 		long long pid;
 		long long p_date;
 		long long p_id;
@@ -280,7 +281,7 @@ get_wall( long long id, char * path, CURL * curl )
 			{
 				p_id = js_get_int( el, "id" );
 				p_date = js_get_int( el, "date" );
-				fprintf( posts, "ID: %lld\nEPOCH: %lld\nText: %s\n", p_id, p_date, js_get_str(el, "text") );
+				fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str(el, "text") );
 
 				json_t * att_json;
 				json_t * att_el;
@@ -321,8 +322,17 @@ get_wall( long long id, char * path, CURL * curl )
 
 							/* downloading */
 							sprintf( attach_path, "%s/%lld.jpg", curpath, pid );
-							printf( "%s\n", attach_path );
+							printf( "%s", attach_path );
 							vk_get_file( fileurl, attach_path, curl );
+						}
+						else
+						{
+							json_t * link_el;
+							link_el = json_object_get( att_el, "link" );
+							if ( link_el )
+							{
+								fprintf( posts, "LINK_URL: %s\nLINK_DSC: %s\n", js_get_str( link_el, "url" ), js_get_str( link_el, "description" ) );
+							}
 						}
 					}
 				}

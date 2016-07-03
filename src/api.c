@@ -105,9 +105,15 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		FILE * fr = fopen( filepath, "r" );
 		err = errno;
 		if ( fr )
-			fclose(fr);
+		{
+						fclose(fr);
+						fprintf( stdout, "\tSKIP\n" );
+						return 0;
+		}
+
 		else if ( err == ENOENT )
 		{
+			fflush( stdout );
 			FILE * fw = fopen( filepath, "w");
 			curl_easy_setopt(curl, CURLOPT_URL, url);
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
@@ -123,6 +129,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			}
 			curl_easy_reset( curl );
 			fclose(fw);
+			fprintf( stdout, "\tOK\n" );
 		}
 	}
 
