@@ -68,13 +68,13 @@ get_id( int argc, char ** argv, CURL * curl )
 {
 	long long id = 0;
 
-	if ( argc == 1 || argc > 3 )
+	if ( argc == 1 || argc > 3 || (argv[1][0] == '-' && argv[1][1] == 'h') )
 	{
 		puts("Wrong arguments.");
-		puts("Usage: vk_grabber <USER|GROUP>");
+		puts("Usage: vkgrab <USER|GROUP>");
 		puts("\tOR");
-		puts("\tvk_grabber -u USER");
-		puts("\tvk_grabber -g GROUP");
+		puts("\tvkgrab -u USER");
+		puts("\tvkgrab -g GROUP");
 		return 0;
 	}
 
@@ -321,7 +321,7 @@ get_wall( long long id, char * path, CURL * curl )
 							}
 
 							/* downloading */
-							sprintf( attach_path, "%s/%lld.jpg", curpath, pid );
+							sprintf( attach_path, "%s/%lld_%lld.jpg", curpath, p_id, pid );
 							printf( "%s", attach_path );
 							vk_get_file( fileurl, attach_path, curl );
 						}
