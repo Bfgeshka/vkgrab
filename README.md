@@ -3,17 +3,17 @@ realisation of VK API via libcurl &amp; jansson
 
 ## usage
 ```
-vk_grabber <USER|GROUP>
+vkgrab <USER|GROUP>
 OR
-vk_grabber -u USER
+vkgrab -u USER
 OR
-vk_grabber -g GROUP
+vkgrab -g GROUP
 ```
 
 ## features
 * downloading photos in albums
 * downloading wall posts
-* downloading attachments from wall posts
+* getting attachments from wall posts (like photos or links)
 * downloaded files are saved in structured directories
 * only screen name is needed
 

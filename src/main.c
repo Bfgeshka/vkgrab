@@ -117,10 +117,10 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 	curpath = malloc( bufs );
 	alchar = malloc( bufs );
 	long long pid;
-	int i;
+//	int i;
 	const char * fileurl;
 
-	for( i = 0; i < arr_size; ++i )
+	for( int i = 0; i < arr_size; ++i )
 	{
 		if ( albums[i].size > 0 )
 		{
