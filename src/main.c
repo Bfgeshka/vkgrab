@@ -25,7 +25,7 @@ get_albums( long long id, CURL * curl )
 	if ( !json )
 	{
 		fprintf( stderr, "JSON album parsing error.\n%d:%s\n", json_err.line, json_err.text );
-		return -1;
+		return 0;
 	}
 
 	/* simplifying json */
@@ -36,7 +36,7 @@ get_albums( long long id, CURL * curl )
 		fprintf( stderr, "Album JSON error.\n" );
 		rsp = json_object_get( json, "error" );
 		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
-		return -2;
+		return 0;
 	}
 
 	/* getting albums metadata*/
@@ -67,44 +67,64 @@ long long
 get_id( int argc, char ** argv, CURL * curl )
 {
 	long long id = 0;
+	usr.is_ok = 1;
+	grp.is_ok = 1;
 
-	if ( argc == 1 || argc > 3 || (argv[1][0] == '-' && argv[1][1] == 'h') )
+	if ( argc == 1 || (argv[1][0] == '-' && argv[1][1] == 'h' ) )
 	{
-		puts("Wrong arguments.");
-		puts("Usage: vkgrab <USER|GROUP>");
-		puts("\tOR");
-		puts("\tvkgrab -u USER");
-		puts("\tvkgrab -g GROUP");
+		puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
+		puts("Or:\tvkgrab <USER|GROUP>");
+		puts("");
+		puts("\t-t TOKEN\tgive a valid token without header \"&access_token=\"");
+		puts("\t-u USER\tignoring group with same screenname");
+		puts("\t-g GROUP\tignoring user with same screenname");
+		puts("If both USER and GROUP do exists, group id would be proceeded");
 		return 0;
-	}
-
-	/* getting id */
-	else if (argv[1][0] == '-')
-	{
-		if (argv[1][1] == 'u')
-			usr = user(argv[2], curl);
-		else if (argv[1][1] == 'g')
-			grp = group(argv[2], curl);
 	}
 	else if (argc == 2)
 	{
 		usr = user(argv[1], curl);
 		grp = group(argv[1], curl);
 	}
+	else
+		for ( int t = 0; t < argc; ++t )
+		{
+			if ( argv[t][0] == '-' )
+			{
+				if ( argv[t][1] == 'u' )
+					usr = user(argv[t+1], curl);
+				if ( argv[t][1] == 'g')
+					grp = group(argv[t+1], curl);
+				if ( argv[t][1] == 't')
+				{
+					if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
+						strcat( TOKEN, argv[t+1] );
+					else
+						sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+				}
+			}
+			if ( (t == argc - 1) && (usr.is_ok == 1) && (grp.is_ok == 1) )
+			{
+				usr = user(argv[t], curl);
+				grp = group(argv[t], curl);
+			}
+		}
+
 
 	/* Info out */
-	if ( usr.is_ok == 0 )
-	{
-		id = usr.uid;
-		printf( "User: %s %s (%s)\nUser ID: %lld\nIs hidden: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid, usr.hidden );
-	}
-	else if ( grp.is_ok == 0 )
+	if ( grp.is_ok == 0 )
 	{
 		id = - grp.gid;
 		printf( "Group: %s (%s)\nGroup ID: %lld\nType: %s\nIs closed: %lld\n\n", grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed );
 	}
 
+	else if ( usr.is_ok == 0 )
+	{
+		id = usr.uid;
+		printf( "User: %s %s (%s)\nUser ID: %lld\nIs hidden: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid, usr.hidden );
+	}
 	return id;
+
 }
 
 void
@@ -117,7 +137,6 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 	curpath = malloc( bufs );
 	alchar = malloc( bufs );
 	long long pid;
-//	int i;
 	const char * fileurl;
 
 	for( int i = 0; i < arr_size; ++i )
@@ -189,7 +208,13 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 								if ( biggest )
 									fileurl = json_string_value( biggest );
 								else
-									continue;
+								{
+									biggest = json_object_get( el, "src_big" );
+									if ( biggest )
+										fileurl = json_string_value( biggest );
+									else
+										continue;
+								}
 							}
 						}
 					}
@@ -315,7 +340,14 @@ get_wall( long long id, char * path, CURL * curl )
 										if ( biggest )
 											fileurl = json_string_value( biggest );
 										else
-											continue;
+										{
+											biggest = json_object_get( photo_el, "src" );
+											if ( biggest )
+												fileurl = json_string_value( biggest );
+											else
+												continue;
+										}
+
 									}
 								}
 							}
