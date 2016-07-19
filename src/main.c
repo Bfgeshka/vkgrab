@@ -121,22 +121,23 @@ get_id( int argc, char ** argv, CURL * curl )
 	else if ( usr.is_ok == 0 )
 	{
 		id = usr.uid;
-		printf( "User: %s %s (%s)\nUser ID: %lld\nIs hidden: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid, usr.hidden );
+		printf( "User: %s %s (%s)\nUser ID: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid );
 	}
 	return id;
 
 }
 
 void
-get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
+get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
 {
 	char * url;
 	char * curpath;
 	char * alchar;
+	char * dirchar;
 	url = malloc( bufs );
 	curpath = malloc( bufs );
 	alchar = malloc( bufs );
-	long long pid;
+	dirchar = malloc( bufs );
 	const char * fileurl;
 
 	for( int i = 0; i < arr_size; ++i )
@@ -149,11 +150,11 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 			{
 				/* common names for service albums */
 				if ( albums[i].aid == -6 )
-					sprintf( alchar, "profile" );
+					sprintf( alchar, DIRNAME_ALB_PROF );
 				else if ( albums[i].aid == -7 )
-					sprintf( alchar, "wall" );
+					sprintf( alchar, DIRNAME_ALB_WALL );
 				else if ( albums[i].aid == -15 )
-					sprintf( alchar, "saved" );
+					sprintf( alchar, DIRNAME_ALB_SAVD );
 				else
 					sprintf( alchar, "%lld[%s]", albums[i].aid, albums[i].title );
 
@@ -163,8 +164,8 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 				r = vk_get_request( url, curl );
 
 				/* creating album directory */
-				sprintf( curpath, "%s/%s", path, alchar );
-				if ( mkdir( curpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+				sprintf( dirchar, "%s/%s", idpath, alchar );
+				if ( mkdir( dirchar, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 					if ( errno != EEXIST )
 						fprintf(stderr, "mkdir() error (%d).\n", errno);
 
@@ -185,44 +186,10 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 				/* iterations in array */
 				size_t index;
 				json_t * el;
-				json_t * biggest;
+				//			json_t * biggest;
 				json_array_foreach( rsp, index, el )
 				{
-					pid = js_get_int(el, "pid");
-					biggest = json_object_get( el, "src_xxxbig" );
-					if ( biggest )
-						fileurl = json_string_value( biggest );
-					else
-					{
-						biggest = json_object_get( el, "src_xxbig" );
-						if ( biggest )
-							fileurl = json_string_value( biggest );
-						else
-						{
-							biggest = json_object_get( el, "src_xbig" );
-							if ( biggest )
-								fileurl = json_string_value( biggest );
-							else
-							{
-								biggest = json_object_get( el, "src_big" );
-								if ( biggest )
-									fileurl = json_string_value( biggest );
-								else
-								{
-									biggest = json_object_get( el, "src_big" );
-									if ( biggest )
-										fileurl = json_string_value( biggest );
-									else
-										continue;
-								}
-							}
-						}
-					}
-
-					/* downloading */
-					sprintf( curpath, "%s/%s/%lld.jpg", path, alchar, pid );
-					printf( "%s", curpath );
-					vk_get_file( fileurl, curpath, curl );
+					photo( dirchar, curpath, fileurl, el, curl, NULL, -1 );
 				}
 			}
 		}
@@ -231,10 +198,11 @@ get_albums_files( long long id, size_t arr_size, char * path, CURL * curl)
 	free( alchar );
 	free( curpath );
 	free( url );
+	free( dirchar );
 }
 
 void
-get_wall( long long id, char * path, CURL * curl )
+get_wall( long long id, char * idpath, CURL * curl )
 {
 	/* char allocation */
 	char * url;
@@ -247,8 +215,8 @@ get_wall( long long id, char * path, CURL * curl )
 	posts_path = malloc( bufs );
 	attach_path = malloc( bufs );
 
-	sprintf( curpath, "%s/%s", path, "wall_attachments" );
-	sprintf( posts_path, "%s/%s", path, "posts.txt" );
+	sprintf( curpath, "%s/%s", idpath, DIRNAME_WALL );
+	sprintf( posts_path, "%s/%s", idpath, FILNAME_POSTS );
 	FILE * posts = fopen( posts_path, "w" );
 
 	if ( mkdir( curpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
@@ -293,10 +261,10 @@ get_wall( long long id, char * path, CURL * curl )
 		/* iterations in array */
 		size_t index;
 		json_t * el;
-		json_t * biggest;
-		json_t * photo_el;
+//		json_t * biggest;
+		json_t * attached;
 
-		long long pid;
+//		long long pid;
 		long long p_date;
 		long long p_id;
 
@@ -316,56 +284,25 @@ get_wall( long long id, char * path, CURL * curl )
 				{
 					json_array_foreach( att_json, att_index, att_el );
 					{
-						photo_el = json_object_get( att_el, "photo" );
-						if ( photo_el )
-						{
-							pid = js_get_int( photo_el, "pid" );
-							fprintf( posts, "Photo for %lld: %lld\n", p_id, pid);
-							biggest = json_object_get( photo_el, "src_xxxbig" );
-							if ( biggest )
-								fileurl = json_string_value( biggest );
-							else
-							{
-								biggest = json_object_get( photo_el, "src_xxbig" );
-								if ( biggest )
-									fileurl = json_string_value( biggest );
-								else
-								{
-									biggest = json_object_get( photo_el, "src_xbig" );
-									if ( biggest )
-										fileurl = json_string_value( biggest );
-									else
-									{
-										biggest = json_object_get( photo_el, "src_big" );
-										if ( biggest )
-											fileurl = json_string_value( biggest );
-										else
-										{
-											biggest = json_object_get( photo_el, "src" );
-											if ( biggest )
-												fileurl = json_string_value( biggest );
-											else
-												continue;
-										}
+						attached = json_object_get( att_el, "photo" );
+						if ( attached )
+							photo( curpath, attach_path, fileurl, attached, curl, posts, p_id );
 
-									}
-								}
-							}
-
-							/* downloading */
-							sprintf( attach_path, "%s/%lld_%lld.jpg", curpath, p_id, pid );
-							printf( "%s", attach_path );
-							vk_get_file( fileurl, attach_path, curl );
-						}
 						else
 						{
-							json_t * link_el;
-							link_el = json_object_get( att_el, "link" );
-							if ( link_el )
+							attached = json_object_get( att_el, "link" );
+							if ( attached )
+								fprintf( posts, "LINK_URL: %s\nLINK_DSC: %s\n", js_get_str( attached, "url" ), js_get_str( attached, "description" ) );
+
+							else
 							{
-								fprintf( posts, "LINK_URL: %s\nLINK_DSC: %s\n", js_get_str( link_el, "url" ), js_get_str( link_el, "description" ) );
+								attached = json_object_get( att_el, "doc" );
+								if ( attached )
+									document( curpath, attach_path, fileurl, attached, curl, posts, p_id );
 							}
 						}
+
+
 					}
 				}
 				fprintf(posts, "------\n\n");
@@ -379,8 +316,81 @@ get_wall( long long id, char * path, CURL * curl )
 	free( url );
 	free( curpath );
 	free( posts_path );
+	free( attach_path );
 	fclose( posts );
 }
+
+void
+get_docs( long long id, char * idpath, CURL * curl )
+{
+	/* char allocation */
+	char * url;
+	char * dirpath;
+	char * doc_path;
+//	char * log_path;
+	const char * fileurl;
+	url = malloc( bufs );
+	dirpath = malloc( bufs );
+	doc_path = malloc( bufs );
+//	log_path = malloc ( bufs );
+
+	/* creating document directory */
+	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
+	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+		if ( errno != EEXIST )
+			fprintf(stderr, "mkdir() error (%d).\n", errno);
+
+	/* Sending API request docs.get */
+	sprintf( url, "https://api.vk.com/method/docs.get?owner_id=%lld%s", id, TOKEN);
+	char * r;
+	r = vk_get_request( url, curl );
+
+	/* JSON init */
+	json_t * json;
+	json_error_t json_err;
+	json = json_loads( r, 0, &json_err );
+	if ( !json )
+		fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+	/* simplifying json */
+	json_t * rsp;
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
+	{
+		fprintf( stderr, "Album JSON error.\n" );
+		rsp = json_object_get( json, "error" );
+		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+	}
+
+	/* Show documents count */
+	json_t * temp_json;
+	temp_json = json_array_get( rsp, 0 );
+	long long docs_count = json_integer_value( temp_json );
+	printf("\nDocuments: %lld\n", docs_count);
+
+
+	/* Log file */
+//	sprintf( log_path, "%s/%s", idpath, FILNAME_DOCS );
+//	FILE * log_doc = fopen( log_path, "w" );
+//	fprintf( log_doc, "Documents: %lld\n\n", docs_count);
+
+	/* Loop init */
+	size_t index;
+	json_t * el;
+//	json_t * attached;
+	json_array_foreach( rsp, index, el )
+	{
+		if ( index != 0 )
+			document( dirpath, doc_path, fileurl, el, curl, NULL, -1 );
+	}
+
+	free( url );
+	free( dirpath );
+	free( doc_path );
+//	free( log_path );
+//	fclose( log_doc );
+}
+
 
 int
 main( int argc, char ** argv )
@@ -409,6 +419,7 @@ main( int argc, char ** argv )
 		return 1;
 	}
 
+	/* Creating dir forr current id */
 	if ( mkdir( user_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf(stderr, "mkdir() error (%d).\n", errno);
@@ -423,6 +434,9 @@ main( int argc, char ** argv )
 		get_albums_files( id, arr_size, user_dir, curl );
 		free(albums);
 	}
+
+	/* Getting user documents */
+	get_docs( id, user_dir, curl );
 
 	curl_easy_cleanup(curl);
 	return 0;

@@ -4,7 +4,7 @@
 struct data_user
 {
 	long long uid;
-	long long hidden;
+//	long long hidden;
 	/* 0 means ok */
 	short is_ok;
 	char fname[bufs];
@@ -82,7 +82,7 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	usr.uid = js_get_int( el, "uid" );
-	usr.hidden = js_get_int ( el, "hidden" );
+//	usr.hidden = js_get_int ( el, "hidden" );
 	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs );
 	strncpy( usr.lname, js_get_str( el, "last_name" ), bufs);
 
@@ -135,4 +135,79 @@ group( char * name, CURL * curl )
 
 
 	return grp;
+}
+
+void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
+photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
+{
+	long long pid;
+	json_t * biggest;
+
+	pid = js_get_int( photo_el, "pid" );
+	if ( p_id > 0 )
+		fprintf( log, "Photo for %lld: %lld\n", p_id, pid);
+	biggest = json_object_get( photo_el, "src_xxxbig" );
+	if ( biggest )
+		fileurl = json_string_value( biggest );
+	else
+	{
+		biggest = json_object_get( photo_el, "src_xxbig" );
+		if ( biggest )
+			fileurl = json_string_value( biggest );
+		else
+		{
+			biggest = json_object_get( photo_el, "src_xbig" );
+			if ( biggest )
+				fileurl = json_string_value( biggest );
+			else
+			{
+				biggest = json_object_get( photo_el, "src_big" );
+				if ( biggest )
+					fileurl = json_string_value( biggest );
+				else
+				{
+					biggest = json_object_get( photo_el, "src" );
+					if ( biggest )
+						fileurl = json_string_value( biggest );
+					else
+					{
+						biggest = json_object_get( photo_el, "src_small" );
+						if ( biggest )
+							fileurl = json_string_value( biggest );
+					}
+				}
+			}
+		}
+	}
+
+	/* downloading */
+	if ( p_id > 0 )
+		sprintf( filepath, "%s/%lld_%lld.jpg", dirpath, p_id, pid );
+	else
+		sprintf( filepath, "%s/%lld.jpg", dirpath, pid );
+
+	printf( "%s", filepath );
+	vk_get_file( fileurl, filepath, curl );
+}
+
+void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
+document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el, CURL * curl, FILE * log, long long p_id )
+{
+	long long did;
+	did = js_get_int( doc_el, "did" );
+
+	if ( p_id > 0 )
+	{
+		fprintf( log, "Document for %lld: %lld (\"%s\")\n", p_id, did, js_get_str( doc_el, "title" ));
+		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, p_id, did, js_get_str( doc_el, "ext" ) );
+	}
+	else
+	{
+		sprintf( filepath, "%s/%lld.%s", dirpath, did, js_get_str( doc_el, "ext" ) );
+	//	fprintf( log, "Document %lld: \"%s\"\n", did, js_get_str( doc_el, "title" ));
+	}
+
+	printf( "%s", filepath );
+	fileurl = js_get_str( doc_el, "url" );
+	vk_get_file( fileurl, filepath, curl );
 }

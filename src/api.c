@@ -119,12 +119,14 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, fw);
 			curl_easy_setopt(curl, CURLOPT_VERBOSE, CRL_VERBOSITY);
+				curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+				curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 2);
 			CURLcode code;
 			code = curl_easy_perform(curl);
 
 			if ( code != CURLE_OK )
 			{
-				fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
+				fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror(code), url );
 				return 1;
 			}
 			curl_easy_reset( curl );
