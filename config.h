@@ -5,12 +5,14 @@
  * How to get access token:
  * https://new.vk.com/dev/auth_mobile
  *
+ * recommended permissions: audio,video,docs,photos
+ *
  * Example:
  * char TOKEN[bufs] "&access_token=blahblahblah"
  */
 
 #define TOKEN_HEAD "&access_token="
-char TOKEN[bufs] = TOKEN_HEAD;
+//char TOKEN[bufs] = TOKEN_HEAD;
 
 
 /* 1L - verbose curl connection, 0L - silent */
@@ -27,6 +29,7 @@ char TOKEN[bufs] = TOKEN_HEAD;
 #define DIRNAME_ALB_PROF "alb_prof"
 #define DIRNAME_ALB_WALL "alb_wall"
 #define DIRNAME_ALB_SAVD "alb_savd"
+#define DIRNAME_AUDIO "alb_tracks"
 #define FILNAME_POSTS "posts.txt"
 #define FILNAME_DOCS "documents.txt"
 #define FILNAME_FRIENDS "friends.txt"

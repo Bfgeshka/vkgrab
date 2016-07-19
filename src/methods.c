@@ -145,7 +145,7 @@ photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el,
 
 	pid = js_get_int( photo_el, "pid" );
 	if ( p_id > 0 )
-		fprintf( log, "Photo for %lld: %lld\n", p_id, pid);
+		fprintf( log, "ATTACH: PHOTO FOR %lld: %lld\n", p_id, pid);
 	biggest = json_object_get( photo_el, "src_xxxbig" );
 	if ( biggest )
 		fileurl = json_string_value( biggest );
@@ -198,7 +198,7 @@ document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el
 
 	if ( p_id > 0 )
 	{
-		fprintf( log, "Document for %lld: %lld (\"%s\")\n", p_id, did, js_get_str( doc_el, "title" ));
+		fprintf( log, "ATTACH: DOCUMENT FOR %lld: %lld (\"%s\")\n", p_id, did, js_get_str( doc_el, "title" ));
 		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, p_id, did, js_get_str( doc_el, "ext" ) );
 	}
 	else
@@ -209,5 +209,27 @@ document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el
 
 	printf( "%s", filepath );
 	fileurl = js_get_str( doc_el, "url" );
+	vk_get_file( fileurl, filepath, curl );
+}
+
+void
+audiofile( char * dirpath, char * filepath, const char * fileurl, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
+{
+	long long aid;
+	aid = js_get_int( aud_el, "aid" );
+
+	if ( p_id > 0 )
+	{
+		fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s\")\n", p_id, aid, js_get_str( aud_el, "title" ));
+		sprintf( filepath, "%s/%lld_%s - %s _%lld.mp3", dirpath, p_id, js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+	}
+	else
+	{
+		sprintf( filepath, "%s/%s - %s _%lld.mp3", dirpath, js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+	//	fprintf( log, "Document %lld: \"%s\"\n", did, js_get_str( doc_el, "title" ));
+	}
+
+	printf( "%s", filepath );
+	fileurl = js_get_str( aud_el, "url" );
 	vk_get_file( fileurl, filepath, curl );
 }

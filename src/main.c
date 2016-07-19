@@ -261,10 +261,6 @@ get_wall( long long id, char * idpath, CURL * curl )
 		/* iterations in array */
 		size_t index;
 		json_t * el;
-//		json_t * biggest;
-		json_t * attached;
-
-//		long long pid;
 		long long p_date;
 		long long p_id;
 
@@ -277,32 +273,48 @@ get_wall( long long id, char * idpath, CURL * curl )
 				fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str(el, "text") );
 
 				json_t * att_json;
-				json_t * att_el;
-				size_t att_index;
 				att_json = json_object_get( el, "attachments" );
 				if (att_json)
 				{
-					json_array_foreach( att_json, att_index, att_el );
+					for ( size_t att_i = 0; att_i < json_array_size(att_json); ++att_i )
 					{
-						attached = json_object_get( att_el, "photo" );
-						if ( attached )
-							photo( curpath, attach_path, fileurl, attached, curl, posts, p_id );
+						json_t * att_el = json_array_get( att_json, att_i );
 
-						else
+						json_t * attached;
+						json_t * tmp_js;
+						attached = json_object_get( att_el, "type" );
+
+						#define ZZ "photo"
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
 						{
-							attached = json_object_get( att_el, "link" );
-							if ( attached )
-								fprintf( posts, "LINK_URL: %s\nLINK_DSC: %s\n", js_get_str( attached, "url" ), js_get_str( attached, "description" ) );
-
-							else
-							{
-								attached = json_object_get( att_el, "doc" );
-								if ( attached )
-									document( curpath, attach_path, fileurl, attached, curl, posts, p_id );
-							}
+							tmp_js = json_object_get( att_el, ZZ );
+							photo( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
 						}
+						#undef ZZ
 
+						#define ZZ "link"
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+						{
+							tmp_js = json_object_get( att_el, ZZ );
+							fprintf( posts, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n", js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
+						}
+						#undef ZZ
 
+						#define ZZ "doc"
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+						{
+							tmp_js = json_object_get( att_el, ZZ );
+							document( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+						}
+						#undef ZZ
+
+						#define ZZ "audio"
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+						{
+							tmp_js = json_object_get( att_el, ZZ );
+							audiofile( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+						}
+						#undef ZZ
 					}
 				}
 				fprintf(posts, "------\n\n");
@@ -482,6 +494,64 @@ get_groups( long long id, char * idpath, CURL * curl )
 	fclose( outptr );
 }
 
+void
+get_music( long long id, char * idpath, CURL * curl )
+{
+	char * url;
+	char * dirpath;
+	char * trackpath;
+	const char * fileurl;
+//	char * outfl;
+	url = malloc( bufs );
+	dirpath = malloc( bufs );
+	trackpath = malloc( bufs );
+//	outfl = malloc( bufs );
+//	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
+//	FILE * outptr = fopen( outfl, "w" );
+
+	/* creating document directory */
+	sprintf( dirpath, "%s/%s", idpath, DIRNAME_AUDIO );
+	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+		if ( errno != EEXIST )
+			fprintf(stderr, "mkdir() error (%d).\n", errno);
+
+	sprintf( url, "https://api.vk.com/method/audio.get?owner_id=%lld&need_user=0%s", id, TOKEN );
+	char * r;
+	r = vk_get_request( url, curl );
+
+	/* JSON init */
+	json_t * json;
+	json_error_t json_err;
+	json = json_loads( r, 0, &json_err );
+	if ( !json )
+		fprintf( stderr, "JSON audio.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+	/* simplifying json */
+	json_t * rsp;
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
+	{
+		fprintf( stderr, "Music response JSON error.\n" );
+		rsp = json_object_get( json, "error" );
+		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+	}
+
+	size_t index;
+	json_t * el;
+	json_array_foreach( rsp, index, el )
+	{
+		if ( index == 0 )
+			printf( "\nTracks: %lld\n", json_integer_value(el) );
+		else
+			audiofile( dirpath, trackpath, fileurl, el, curl, NULL, -1 );
+	}
+
+	free( dirpath );
+	free( url );
+	free( trackpath );
+
+}
+
 
 int
 main( int argc, char ** argv )
@@ -535,6 +605,7 @@ main( int argc, char ** argv )
 		get_groups( id, user_dir, curl );
 	}
 
+	get_music( id, user_dir, curl );
 
 	curl_easy_cleanup(curl);
 	return 0;
