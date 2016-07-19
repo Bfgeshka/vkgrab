@@ -29,3 +29,5 @@ char TOKEN[bufs] = TOKEN_HEAD;
 #define DIRNAME_ALB_SAVD "alb_savd"
 #define FILNAME_POSTS "posts.txt"
 #define FILNAME_DOCS "documents.txt"
+#define FILNAME_FRIENDS "friends.txt"
+#define FILNAME_GROUPS "communities.txt"

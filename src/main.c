@@ -350,14 +350,14 @@ get_docs( long long id, char * idpath, CURL * curl )
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
 	if ( !json )
-		fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		fprintf( stderr, "JSON docs.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
 	/* simplifying json */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "Album JSON error.\n" );
+		fprintf( stderr, "Documents JSON error.\n" );
 		rsp = json_object_get( json, "error" );
 		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
 	}
@@ -389,6 +389,97 @@ get_docs( long long id, char * idpath, CURL * curl )
 	free( doc_path );
 //	free( log_path );
 //	fclose( log_doc );
+}
+
+void
+get_friends( long long id, char * idpath, CURL * curl )
+{
+	char * url;
+	char * outfl;
+	url = malloc( bufs );
+	outfl = malloc( bufs );
+	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
+	FILE * outptr = fopen( outfl, "w" );
+
+	sprintf( url, "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s", id, TOKEN );
+	char * r;
+	r = vk_get_request( url, curl );
+
+	/* JSON init */
+	json_t * json;
+	json_error_t json_err;
+	json = json_loads( r, 0, &json_err );
+	if ( !json )
+		fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+	/* simplifying json */
+	json_t * rsp;
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
+	{
+		fprintf( stderr, "Friends JSON error.\n" );
+		rsp = json_object_get( json, "error" );
+		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+	}
+
+	/* iterations in array */
+	size_t index;
+	json_t * el;
+	json_array_foreach( rsp, index, el )
+	{
+		fprintf( outptr, "%s\n", js_get_str(el, "domain") );
+	}
+
+	printf("\nFriends list (of %lu) saved!\n", (unsigned long) index);
+	free( url );
+	free( outfl );
+	fclose( outptr );
+}
+
+void
+get_groups( long long id, char * idpath, CURL * curl )
+{
+	char * url;
+	char * outfl;
+	url = malloc( bufs );
+	outfl = malloc( bufs );
+	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
+	FILE * outptr = fopen( outfl, "w" );
+
+	sprintf( url, "https://api.vk.com/method/groups.get?user_id=%lld&extended=1%s", id, TOKEN );
+	char * r;
+	r = vk_get_request( url, curl );
+
+	/* JSON init */
+	json_t * json;
+	json_error_t json_err;
+	json = json_loads( r, 0, &json_err );
+	if ( !json )
+		fprintf( stderr, "JSON groups.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+	/* simplifying json */
+	json_t * rsp;
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
+	{
+		fprintf( stderr, "Groups JSON error.\n" );
+		rsp = json_object_get( json, "error" );
+		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+	}
+
+	/* iterations in array */
+	size_t index;
+	json_t * el;
+	json_array_foreach( rsp, index, el )
+	{
+		if ( index != 0 )
+			fprintf( outptr, "%s\n", js_get_str(el, "screen_name") );
+	}
+
+	printf("Communities list (of %lu) saved!\n", (unsigned long) index - 1);
+	free( url );
+	free( outfl );
+	fclose( outptr );
 }
 
 
@@ -437,6 +528,13 @@ main( int argc, char ** argv )
 
 	/* Getting user documents */
 	get_docs( id, user_dir, curl );
+
+	if ( id > 0 )
+	{
+		get_friends( id, user_dir, curl );
+		get_groups( id, user_dir, curl );
+	}
+
 
 	curl_easy_cleanup(curl);
 	return 0;
