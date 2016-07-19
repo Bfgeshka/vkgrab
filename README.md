@@ -1,5 +1,5 @@
 # vkgrab
-realisation of VK API via libcurl &amp; jansson
+Grab everything you can from vk.com pages! Works with VK API via libcurl &amp; jansson
 
 ## usage
 ```
@@ -11,9 +11,10 @@ vkgrab -g GROUP
 ```
 
 ## features
-* downloading photos in albums
-* downloading wall posts
-* getting attachments from wall posts (like photos or links)
+* albums downloading
+* wall posts downloading
+* documents downloading
+* getting attachments from wall posts (like photos, documents or links)
 * downloaded files are saved in structured directories
 * only screen name is needed
 
