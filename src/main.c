@@ -1,7 +1,7 @@
 #include "methods.c"
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <unistd.h>
 
 struct data_user usr;
 struct data_group grp;
@@ -164,6 +164,7 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
 				r = vk_get_request( url, curl );
 
 				/* creating album directory */
+				fix_filename( alchar );
 				sprintf( dirchar, "%s/%s", idpath, alchar );
 				if ( mkdir( dirchar, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 					if ( errno != EEXIST )
@@ -284,37 +285,45 @@ get_wall( long long id, char * idpath, CURL * curl )
 						json_t * tmp_js;
 						attached = json_object_get( att_el, "type" );
 
-						#define ZZ "photo"
+#define ZZ "photo"
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							photo( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
 						}
-						#undef ZZ
+#undef ZZ
 
-						#define ZZ "link"
+#define ZZ "link"
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							fprintf( posts, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n", js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
 						}
-						#undef ZZ
+#undef ZZ
 
-						#define ZZ "doc"
+#define ZZ "doc"
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							document( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
 						}
-						#undef ZZ
+#undef ZZ
 
-						#define ZZ "audio"
+#define ZZ "audio"
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							audiofile( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
 						}
-						#undef ZZ
+#undef ZZ
+
+//#define ZZ "video"
+//						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+//						{
+//							tmp_js = json_object_get( att_el, ZZ );
+//							vid_file( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+//						}
+//#undef ZZ
 					}
 				}
 				fprintf(posts, "------\n\n");
@@ -501,13 +510,9 @@ get_music( long long id, char * idpath, CURL * curl )
 	char * dirpath;
 	char * trackpath;
 	const char * fileurl;
-//	char * outfl;
 	url = malloc( bufs );
 	dirpath = malloc( bufs );
 	trackpath = malloc( bufs );
-//	outfl = malloc( bufs );
-//	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
-//	FILE * outptr = fopen( outfl, "w" );
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_AUDIO );
@@ -552,6 +557,103 @@ get_music( long long id, char * idpath, CURL * curl )
 
 }
 
+void
+get_videos( long long id, char * idpath, CURL * curl )
+{
+	char * url;
+	char * dirpath;
+	char * vidpath;
+	const char * fileurl;
+	url = malloc( bufs );
+	dirpath = malloc( bufs );
+	vidpath = malloc( bufs );
+
+	/* creating document directory */
+	sprintf( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
+	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+		if ( errno != EEXIST )
+			fprintf(stderr, "mkdir() error (%d).\n", errno);
+
+	/* creating log file with external links */
+	char * vid_log_path;
+	vid_log_path = malloc( bufs );
+	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
+	FILE * vid_log = fopen( vid_log_path, "w" );
+
+	/* finding out videos count */
+//	sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&count=0&offset=0%s", id, TOKEN );
+//	sleep(1); /* too many requests per second, must be reduced */
+//	char * r_pre;
+//	r_pre = vk_get_request( url, curl );
+
+	/* JSON init */
+//	json_t * json;
+//	json_error_t json_err;
+//	json = json_loads( r_pre, 0, &json_err );
+//	if ( !json )
+//		fprintf( stderr, "JSON scout video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+	/* simplifying json */
+//	json_t * rsp;
+//	rsp = json_object_get( json, "response" );
+//	if (!rsp)
+//	{
+//		fprintf( stderr, "Videos scout JSON error.\n" );
+//		rsp = json_object_get( json, "error" );
+//		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+//	}
+
+	long long vid_count = 0;
+
+
+	/* Loop init */
+	int offset;
+	int times = 0;
+	for ( offset = 0; offset <= times; ++offset )
+	{
+		/* creating request */
+		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s", id, offset * LIMIT_V, LIMIT_V, TOKEN );
+		char * r;
+		r = vk_get_request( url, curl );
+
+		/* JSON init */
+		json_t * json;
+		json_error_t json_err;
+		json = json_loads( r, 0, &json_err );
+		if ( !json )
+			fprintf( stderr, "JSON video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+		/* simplifying json */
+		json_t * rsp;
+		rsp = json_object_get( json, "response" );
+		if (!rsp)
+		{
+			fprintf( stderr, "Videos JSON error.\n" );
+			rsp = json_object_get( json, "error" );
+			fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		}
+
+		/* iterations in array */
+		size_t index;
+		json_t * el;
+		json_array_foreach( rsp, index, el )
+		{
+			if ( index == 0 && offset == 0 )
+			{
+				vid_count = json_integer_value( json_array_get( rsp, 0 ) );
+				printf("\nVideos: %lld\n", vid_count);
+			}
+			vid_file( dirpath, vidpath, fileurl, el, curl, vid_log, -1 );
+		}
+
+		times = vid_count / LIMIT_V;
+	}
+
+	free( dirpath );
+	free( vidpath );
+	free( url );
+}
+
 
 int
 main( int argc, char ** argv )
@@ -580,7 +682,8 @@ main( int argc, char ** argv )
 		return 1;
 	}
 
-	/* Creating dir forr current id */
+	/* Creating dir for current id */
+	fix_filename( user_dir );
 	if ( mkdir( user_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf(stderr, "mkdir() error (%d).\n", errno);
@@ -606,6 +709,7 @@ main( int argc, char ** argv )
 	}
 
 	get_music( id, user_dir, curl );
+//	get_videos( id, user_dir, curl );
 
 	curl_easy_cleanup(curl);
 	return 0;

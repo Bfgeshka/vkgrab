@@ -106,9 +106,9 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		err = errno;
 		if ( fr )
 		{
-						fclose(fr);
-						fprintf( stdout, "\tSKIP\n" );
-						return 0;
+			fclose(fr);
+			fprintf( stdout, "\tSKIP\n" );
+			return 0;
 		}
 
 		else if ( err == ENOENT )
@@ -119,8 +119,8 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, fw);
 			curl_easy_setopt(curl, CURLOPT_VERBOSE, CRL_VERBOSITY);
-				curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-				curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 2);
+			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+			curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 2);
 			CURLcode code;
 			code = curl_easy_perform(curl);
 

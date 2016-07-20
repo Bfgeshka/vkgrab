@@ -12,7 +12,7 @@
  */
 
 #define TOKEN_HEAD "&access_token="
-//char TOKEN[bufs] = TOKEN_HEAD;
+char TOKEN[bufs] = TOKEN_HEAD;
 
 
 /* 1L - verbose curl connection, 0L - silent */
@@ -24,13 +24,18 @@
 /* Limitations for one-time wall posts request. Current is 100 */
 #define LIMIT_W 100
 
+/* Limitations for one-time videos request. Current is 200, default is 100 */
+#define LIMIT_V 200
+
 #define DIRNAME_DOCS "alb_docs"
 #define DIRNAME_WALL "alb_atch"
 #define DIRNAME_ALB_PROF "alb_prof"
 #define DIRNAME_ALB_WALL "alb_wall"
 #define DIRNAME_ALB_SAVD "alb_savd"
 #define DIRNAME_AUDIO "alb_tracks"
+#define DIRNAME_VIDEO "alb_videos"
 #define FILNAME_POSTS "posts.txt"
 #define FILNAME_DOCS "documents.txt"
 #define FILNAME_FRIENDS "friends.txt"
 #define FILNAME_GROUPS "communities.txt"
+#define FILNAME_VIDEOS "videos.txt"

@@ -4,7 +4,6 @@
 struct data_user
 {
 	long long uid;
-//	long long hidden;
 	/* 0 means ok */
 	short is_ok;
 	char fname[bufs];
@@ -82,7 +81,6 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	usr.uid = js_get_int( el, "uid" );
-//	usr.hidden = js_get_int ( el, "hidden" );
 	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs );
 	strncpy( usr.lname, js_get_str( el, "last_name" ), bufs);
 
@@ -133,9 +131,21 @@ group( char * name, CURL * curl )
 	strncpy( grp.type, js_get_str( el, "type" ), bufs );
 	strncpy( grp.screenname, name, bufs );
 
-
 	return grp;
 }
+
+void
+fix_filename( char * dirty )
+{
+	for ( int i = 0; i < strlen( dirty ); ++i )
+	{
+		if ( dirty[i] == '/' || dirty[i] == ':' )
+		{
+			dirty[i] = '_';
+		}
+	}
+}
+
 
 void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
 photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
@@ -202,10 +212,8 @@ document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el
 		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, p_id, did, js_get_str( doc_el, "ext" ) );
 	}
 	else
-	{
 		sprintf( filepath, "%s/%lld.%s", dirpath, did, js_get_str( doc_el, "ext" ) );
-	//	fprintf( log, "Document %lld: \"%s\"\n", did, js_get_str( doc_el, "title" ));
-	}
+
 
 	printf( "%s", filepath );
 	fileurl = js_get_str( doc_el, "url" );
@@ -216,20 +224,90 @@ void
 audiofile( char * dirpath, char * filepath, const char * fileurl, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long aid;
+	char * dirty = malloc( bufs );
 	aid = js_get_int( aud_el, "aid" );
 
 	if ( p_id > 0 )
 	{
 		fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s\")\n", p_id, aid, js_get_str( aud_el, "title" ));
-		sprintf( filepath, "%s/%lld_%s - %s _%lld.mp3", dirpath, p_id, js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+		sprintf( dirty, "%lld_%s - %s _%lld.mp3", p_id, js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+		fix_filename( dirty );
+		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
 	else
 	{
-		sprintf( filepath, "%s/%s - %s _%lld.mp3", dirpath, js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
-	//	fprintf( log, "Document %lld: \"%s\"\n", did, js_get_str( doc_el, "title" ));
+		sprintf( dirty, "%s - %s _%lld.mp3", js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+		fix_filename( dirty );
+		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
 
 	printf( "%s", filepath );
 	fileurl = js_get_str( aud_el, "url" );
+	free( dirty );
 	vk_get_file( fileurl, filepath, curl );
+}
+
+void
+vid_file( char * dirpath, char * filepath, const char * fileurl, json_t * vid_el, CURL * curl, FILE * log, long long p_id )
+{
+	long long vid;
+	vid = js_get_int( vid_el, "vid" );
+
+	if ( p_id > 0 )
+		fprintf( log, "ATTACH: VIDEO FOR %lld: %lld, (\"%s\")\n", p_id, vid, js_get_str( vid_el, "title" ) );
+	else
+		fprintf( log, "\n%lld:(\"%s\")", vid, js_get_str( vid_el, "title" ) );
+
+
+
+	json_t * v_block;
+	v_block = json_object_get( vid_el, "files" );
+
+	json_t * v_link;
+	v_link = json_object_get( v_block, "external" );
+	if ( v_link )
+	{
+		fileurl = json_string_value( v_link );
+		if ( p_id > 0 )
+			fprintf( log, "ATTACH: VIDEO EXTERNAL LINK: %s\n", fileurl );
+		else
+			fprintf( log, " %s", fileurl );
+	}
+	else
+	{
+		v_link = json_object_get( v_block, "mp4_1080" );
+		if ( v_link )
+			fileurl = json_string_value( v_link );
+		else
+		{
+			v_link = json_object_get( v_block, "mp4_720" );
+			if ( v_link )
+				fileurl = json_string_value( v_link );
+			else
+			{
+				v_link = json_object_get( v_block, "mp4_480" );
+				if ( v_link )
+					fileurl = json_string_value( v_link );
+				else
+				{
+					v_link = json_object_get( v_block, "mp4_360" );
+					if ( v_link )
+						fileurl = json_string_value( v_link );
+					else
+					{
+						v_link = json_object_get( v_block, "mp4_240" );
+						if ( v_link )
+							fileurl = json_string_value( v_link );
+						else printf(" No valid link!\n");
+					}
+				}
+			}
+			if ( p_id > 0 )
+				sprintf( filepath, "%s/%lld_%lld.mp4", dirpath, p_id, vid );
+			else
+				sprintf( filepath, "%s/%lld.mp4", dirpath, vid );
+		}
+		vk_get_file( fileurl, filepath, curl );
+	}
+
 }
