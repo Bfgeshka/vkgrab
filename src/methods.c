@@ -196,7 +196,7 @@ photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el,
 	else
 		sprintf( filepath, "%s/%lld.jpg", dirpath, pid );
 
-	printf( "%s", filepath );
+	printf( "%s ", filepath );
 	vk_get_file( fileurl, filepath, curl );
 }
 
@@ -215,7 +215,7 @@ document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el
 		sprintf( filepath, "%s/%lld.%s", dirpath, did, js_get_str( doc_el, "ext" ) );
 
 
-	printf( "%s", filepath );
+	printf( "%s ", filepath );
 	fileurl = js_get_str( doc_el, "url" );
 	vk_get_file( fileurl, filepath, curl );
 }
@@ -224,24 +224,29 @@ void
 audiofile( char * dirpath, char * filepath, const char * fileurl, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long aid;
-	char * dirty = malloc( bufs );
+	char * dirty = malloc( bufs/2 );
 	aid = js_get_int( aud_el, "aid" );
+
+	char * tr_art = malloc( a_field );
+	char * tr_tit = malloc( a_field );
+	strncpy( tr_art, js_get_str( aud_el, "artist" ), a_field );
+	strncpy( tr_tit, js_get_str( aud_el, "title" ), a_field );
 
 	if ( p_id > 0 )
 	{
-		fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s\")\n", p_id, aid, js_get_str( aud_el, "title" ));
-		sprintf( dirty, "%lld_%s - %s _%lld.mp3", p_id, js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+		fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s - %s\")\n", p_id, aid, tr_art, tr_tit );
+		sprintf( dirty, "%lld_%s - %s_%lld.mp3", p_id, tr_art, tr_tit, aid );
 		fix_filename( dirty );
 		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
 	else
 	{
-		sprintf( dirty, "%s - %s _%lld.mp3", js_get_str( aud_el, "artist" ), js_get_str( aud_el, "title" ), aid );
+		sprintf( dirty, "%s - %s _%lld.mp3", tr_art, tr_tit, aid );
 		fix_filename( dirty );
 		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
 
-	printf( "%s", filepath );
+	printf( "%s ", filepath );
 	fileurl = js_get_str( aud_el, "url" );
 	free( dirty );
 	vk_get_file( fileurl, filepath, curl );

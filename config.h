@@ -1,5 +1,6 @@
 /* Size for usual string */
-#define bufs 256
+#define bufs 512
+#define a_field 32
 
 /*
  * How to get access token:
@@ -39,3 +40,5 @@ char TOKEN[bufs] = TOKEN_HEAD;
 #define FILNAME_FRIENDS "friends.txt"
 #define FILNAME_GROUPS "communities.txt"
 #define FILNAME_VIDEOS "videos.txt"
+#define FILNAME_IDNAME "description"
+#define USLEEP_INT 100000

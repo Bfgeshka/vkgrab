@@ -498,6 +498,7 @@ get_groups( long long id, char * idpath, CURL * curl )
 	}
 
 	printf("Communities list (of %lu) saved!\n", (unsigned long) index - 1);
+
 	free( url );
 	free( outfl );
 	fclose( outptr );
@@ -554,7 +555,6 @@ get_music( long long id, char * idpath, CURL * curl )
 	free( dirpath );
 	free( url );
 	free( trackpath );
-
 }
 
 void
@@ -672,10 +672,19 @@ main( int argc, char ** argv )
 	if ( id == 0 )
 		return 2;
 	char user_dir[bufs];
+	char name_descript[bufs];
 	if ( usr.is_ok == 0 )
-		sprintf( user_dir, "%s(%lld)_%s_%s", usr.screenname, usr.uid, usr.fname, usr.lname);
+	{
+		sprintf( user_dir, "%s(%lld)", usr.screenname, usr.uid );
+		sprintf( name_descript, "%s_%s",  usr.fname, usr.lname );
+	}
+
 	else if (grp.is_ok == 0)
-		sprintf( user_dir, "%s(%lld)_%s", grp.screenname, grp.gid, grp.name );
+	{
+		sprintf( user_dir, "%s(%lld)", grp.screenname, grp.gid );
+		sprintf( name_descript, "%s",  grp.name );
+	}
+//		sprintf( user_dir, "%s(%lld)_%s", grp.screenname, grp.gid, grp.name );
 	else
 	{
 		fprintf( stderr, "Screenname is invalid.\n");
@@ -687,6 +696,11 @@ main( int argc, char ** argv )
 	if ( mkdir( user_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf(stderr, "mkdir() error (%d).\n", errno);
+	char name_dsc_path[bufs];
+	sprintf( name_dsc_path, "%s/%s", user_dir, FILNAME_IDNAME );
+	FILE * u_name = fopen( name_dsc_path, "w" );
+	fprintf( u_name, name_descript );
+	fclose( u_name );
 
 	/* Getting wall content */
 	get_wall( id, user_dir, curl );
@@ -701,13 +715,14 @@ main( int argc, char ** argv )
 
 	/* Getting user documents */
 	get_docs( id, user_dir, curl );
-
+	if (usleep(USLEEP_INT)) printf ("sleep err");
 	if ( id > 0 )
 	{
 		get_friends( id, user_dir, curl );
+		if (usleep(USLEEP_INT)) printf ("sleep err");
 		get_groups( id, user_dir, curl );
 	}
-
+		if (usleep(USLEEP_INT)) printf ("sleep err");
 	get_music( id, user_dir, curl );
 //	get_videos( id, user_dir, curl );
 

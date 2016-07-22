@@ -4,7 +4,7 @@ SRC = src/main.c
 NAME = vkgrab
 PREFIX = /usr/local
 
-CFLAGS = -O2 -Wall --std=c99 -s
+CFLAGS = -O2 -Wall --std=c99 -g
 # LDFLAGS = -ljansson -lcurl
 LDFLAGS := $(shell pkg-config --libs jansson libcurl)
 
