@@ -28,6 +28,7 @@ char TOKEN[bufs] = TOKEN_HEAD;
 /* Limitations for one-time videos request. Current is 200, default is 100 */
 #define LIMIT_V 200
 
+/* File and directory naming for constant values */
 #define DIRNAME_DOCS "alb_docs"
 #define DIRNAME_WALL "alb_atch"
 #define DIRNAME_ALB_PROF "alb_prof"
@@ -40,5 +41,15 @@ char TOKEN[bufs] = TOKEN_HEAD;
 #define FILNAME_FRIENDS "friends.txt"
 #define FILNAME_GROUPS "communities.txt"
 #define FILNAME_VIDEOS "videos.txt"
-#define FILNAME_IDNAME "description"
+#define FILNAME_IDNAME "description.txt"
+
+/* Sometimes program runs too fast and VK returns errors because of too often api requests.
+ * This timer slows program down before making a request. It wouldn't be applied to file downloading.
+ * Default value is 100000, which means 0.1s. */
 #define USLEEP_INT 100000
+
+/* Defines which file types would be downloaded; 0 means skip, 1 means download */
+#define DOGET_AUD 0
+#define DOGET_VID 0
+#define DOGET_DOC 1
+#define DOGET_PIC 1

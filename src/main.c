@@ -6,7 +6,20 @@
 struct data_user usr;
 struct data_group grp;
 struct data_album * albums;
+struct control_datatypes types;
 long long photos_count = 0;
+
+void
+help_print()
+{
+	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
+	puts("Or:\tvkgrab <USER|GROUP>");
+	puts("");
+	puts("\t-t TOKEN\tgive a valid token without header \"&access_token=\"");
+	puts("\t-u USER\tignoring group with same screenname");
+	puts("\t-g GROUP\tignoring user with same screenname");
+	puts("If both USER and GROUP do exists, group id would be proceeded");
+}
 
 size_t
 get_albums( long long id, CURL * curl )
@@ -72,13 +85,7 @@ get_id( int argc, char ** argv, CURL * curl )
 
 	if ( argc == 1 || (argv[1][0] == '-' && argv[1][1] == 'h' ) )
 	{
-		puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
-		puts("Or:\tvkgrab <USER|GROUP>");
-		puts("");
-		puts("\t-t TOKEN\tgive a valid token without header \"&access_token=\"");
-		puts("\t-u USER\tignoring group with same screenname");
-		puts("\t-g GROUP\tignoring user with same screenname");
-		puts("If both USER and GROUP do exists, group id would be proceeded");
+		help_print();
 		return 0;
 	}
 	else if (argc == 2)
@@ -101,6 +108,32 @@ get_id( int argc, char ** argv, CURL * curl )
 						strcat( TOKEN, argv[t+1] );
 					else
 						sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+				}
+				if ( argv[t][1] == 'n' )
+				{
+					if ( argv[t][2] == 'p' )
+						types.pictr = 0;
+					else if ( argv[t][2] == 'd' )
+						types.docmt = 0;
+					else if ( argv[t][2] == 'a' )
+						types.audio = 0;
+					else if ( argv[t][2] == 'v' )
+						types.video = 0;
+					else
+						help_print();
+				}
+				if ( argv[t][1] == 'y' )
+				{
+					if ( argv[t][2] == 'p' )
+						types.pictr = 1;
+					else if ( argv[t][2] == 'd' )
+						types.docmt = 1;
+					else if ( argv[t][2] == 'a' )
+						types.audio = 1;
+					else if ( argv[t][2] == 'v' )
+						types.video = 1;
+					else
+						help_print();
 				}
 			}
 			if ( (t == argc - 1) && (usr.is_ok == 1) && (grp.is_ok == 1) )
@@ -286,7 +319,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 						attached = json_object_get( att_el, "type" );
 
 #define ZZ "photo"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.pictr == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							photo( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
@@ -302,7 +335,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 #undef ZZ
 
 #define ZZ "doc"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.docmt == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							document( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
@@ -310,7 +343,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 #undef ZZ
 
 #define ZZ "audio"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.audio == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							audiofile( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
@@ -318,7 +351,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 #undef ZZ
 
 //#define ZZ "video"
-//						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
+//						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.video == 1 )
 //						{
 //							tmp_js = json_object_get( att_el, ZZ );
 //							vid_file( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
@@ -667,6 +700,12 @@ main( int argc, char ** argv )
 		return 3;
 	}
 
+	/* Define downloaded datatypes */
+	types.audio = DOGET_AUD;
+	types.docmt = DOGET_DOC;
+	types.pictr = DOGET_PIC;
+	types.video = DOGET_VID;
+
 	/* Checking id */
 	long long id = get_id( argc, argv, curl );
 	if ( id == 0 )
@@ -678,13 +717,11 @@ main( int argc, char ** argv )
 		sprintf( user_dir, "%s(%lld)", usr.screenname, usr.uid );
 		sprintf( name_descript, "%s_%s",  usr.fname, usr.lname );
 	}
-
 	else if (grp.is_ok == 0)
 	{
 		sprintf( user_dir, "%s(%lld)", grp.screenname, grp.gid );
 		sprintf( name_descript, "%s",  grp.name );
 	}
-//		sprintf( user_dir, "%s(%lld)_%s", grp.screenname, grp.gid, grp.name );
 	else
 	{
 		fprintf( stderr, "Screenname is invalid.\n");
@@ -706,24 +743,35 @@ main( int argc, char ** argv )
 	get_wall( id, user_dir, curl );
 
 	/* Getting albums content */
-	size_t arr_size = get_albums( id, curl );
-	if ( arr_size > 0 )
+	if ( types.pictr == 1 )
 	{
-		get_albums_files( id, arr_size, user_dir, curl );
-		free(albums);
+		size_t arr_size = get_albums( id, curl );
+		if ( arr_size > 0 )
+		{
+			get_albums_files( id, arr_size, user_dir, curl );
+			free(albums);
+		}
 	}
 
 	/* Getting user documents */
-	get_docs( id, user_dir, curl );
+	if ( types.docmt == 1 )
+		get_docs( id, user_dir, curl );
+
 	if (usleep(USLEEP_INT)) printf ("sleep err");
+
 	if ( id > 0 )
 	{
 		get_friends( id, user_dir, curl );
 		if (usleep(USLEEP_INT)) printf ("sleep err");
 		get_groups( id, user_dir, curl );
 	}
-		if (usleep(USLEEP_INT)) printf ("sleep err");
-	get_music( id, user_dir, curl );
+
+	if (usleep(USLEEP_INT)) printf ("sleep err");
+
+	if ( types.audio == 1 )
+		get_music( id, user_dir, curl );
+
+//	if ( types.video == 1 )
 //	get_videos( id, user_dir, curl );
 
 	curl_easy_cleanup(curl);

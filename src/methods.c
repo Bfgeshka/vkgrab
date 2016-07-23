@@ -29,6 +29,14 @@ struct data_album
 	char title[bufs];
 };
 
+struct control_datatypes
+{
+	short audio;
+	short docmt;
+	short pictr;
+	short video;
+};
+
 long long
 js_get_int( json_t * src, char * key )
 {
@@ -139,7 +147,7 @@ fix_filename( char * dirty )
 {
 	for ( int i = 0; i < strlen( dirty ); ++i )
 	{
-		if ( dirty[i] == '/' || dirty[i] == ':' )
+		if ( dirty[i] == '/' || dirty[i] == ':' || dirty[i] == '\\' )
 		{
 			dirty[i] = '_';
 		}
