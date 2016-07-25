@@ -324,3 +324,17 @@ vid_file( char * dirpath, char * filepath, const char * fileurl, json_t * vid_el
 	}
 
 }
+
+void
+help_print()
+{
+	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
+	puts("Or:\tvkgrab <USER|GROUP>");
+	puts("");
+	puts("\t-t TOKEN\tgive a valid token without header \"&access_token=\"");
+	puts("\t-u USER\tignoring group with same screenname");
+	puts("\t-g GROUP\tignoring user with same screenname");
+	puts("\t-ya, -yv, -yd, -yp\tallows downloading audio, video, documents or pictures");
+	puts("\t-na, -nv, -nd, -np\tforbids downloading audio, video, documents or pictures");
+	puts("If both USER and GROUP do exists, group id would be proceeded");
+}

@@ -9,18 +9,6 @@ struct data_album * albums;
 struct control_datatypes types;
 long long photos_count = 0;
 
-void
-help_print()
-{
-	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
-	puts("Or:\tvkgrab <USER|GROUP>");
-	puts("");
-	puts("\t-t TOKEN\tgive a valid token without header \"&access_token=\"");
-	puts("\t-u USER\tignoring group with same screenname");
-	puts("\t-g GROUP\tignoring user with same screenname");
-	puts("If both USER and GROUP do exists, group id would be proceeded");
-}
-
 size_t
 get_albums( long long id, CURL * curl )
 {
@@ -32,6 +20,7 @@ get_albums( long long id, CURL * curl )
 	r = vk_get_request(url, curl);
 	free(url);
 
+	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
@@ -59,19 +48,20 @@ get_albums( long long id, CURL * curl )
 	{
 		json_t * el;
 		size_t index;
-		printf("\nAlbums: %lu\n", (unsigned long) arr_size);
+		printf("\nAlbums: %lu.\n", (unsigned long) arr_size);
 		albums = malloc( arr_size * sizeof(struct data_album) );
 		json_array_foreach( rsp, index, el )
 		{
 			albums[index].aid = js_get_int(el, "aid");
 			albums[index].size = js_get_int(el, "size");
 			strncpy( albums[index].title, js_get_str(el, "title" ), bufs);
-			printf( "Album: %s (id:%lld, #:%lld)\n", albums[index].title, albums[index].aid, albums[index].size );
+			printf( "Album: %s (id:%lld, #:%lld).\n",
+					albums[index].title, albums[index].aid, albums[index].size );
 			photos_count += albums[index].size;
 		}
 	}
 	else
-		printf("ID hasn't any album\n");
+		printf("No albums found.\n");
 
 	return arr_size;
 }
@@ -100,9 +90,9 @@ get_id( int argc, char ** argv, CURL * curl )
 			{
 				if ( argv[t][1] == 'u' )
 					usr = user(argv[t+1], curl);
-				if ( argv[t][1] == 'g')
+				if ( argv[t][1] == 'g' )
 					grp = group(argv[t+1], curl);
-				if ( argv[t][1] == 't')
+				if ( argv[t][1] == 't' )
 				{
 					if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
 						strcat( TOKEN, argv[t+1] );
@@ -120,7 +110,10 @@ get_id( int argc, char ** argv, CURL * curl )
 					else if ( argv[t][2] == 'v' )
 						types.video = 0;
 					else
+					{
 						help_print();
+						return 0;
+					}
 				}
 				if ( argv[t][1] == 'y' )
 				{
@@ -133,7 +126,10 @@ get_id( int argc, char ** argv, CURL * curl )
 					else if ( argv[t][2] == 'v' )
 						types.video = 1;
 					else
+					{
 						help_print();
+						return 0;
+					}
 				}
 			}
 			if ( (t == argc - 1) && (usr.is_ok == 1) && (grp.is_ok == 1) )
@@ -143,25 +139,25 @@ get_id( int argc, char ** argv, CURL * curl )
 			}
 		}
 
-
 	/* Info out */
 	if ( grp.is_ok == 0 )
 	{
 		id = - grp.gid;
-		printf( "Group: %s (%s)\nGroup ID: %lld\nType: %s\nIs closed: %lld\n\n", grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed );
+		printf( "Group: %s (%s).\nGroup ID: %lld.\nType: %s.\nIs closed: %lld.\n\n",
+				grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed );
 	}
-
 	else if ( usr.is_ok == 0 )
 	{
 		id = usr.uid;
-		printf( "User: %s %s (%s)\nUser ID: %lld\n\n", usr.fname, usr.lname, usr.screenname, usr.uid );
+		printf( "User: %s %s (%s).\nUser ID: %lld.\n\n",
+				usr.fname, usr.lname, usr.screenname, usr.uid );
 	}
-	return id;
 
+	return id;
 }
 
 void
-get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
+get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 {
 	char * url;
 	char * curpath;
@@ -179,7 +175,7 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
 		{
 			int offset;
 			int times = albums[i].size / LIMIT_A;
-			for ( offset = 0; offset <= times; ++offset)
+			for ( offset = 0; offset <= times; ++offset )
 			{
 				/* common names for service albums */
 				if ( albums[i].aid == -6 )
@@ -192,7 +188,8 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
 					sprintf( alchar, "%lld[%s]", albums[i].aid, albums[i].title );
 
 				/* creating request */
-				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s", id, albums[i].aid, offset * LIMIT_A, TOKEN );
+				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s",
+						id, albums[i].aid, offset * LIMIT_A, TOKEN );
 				char * r;
 				r = vk_get_request( url, curl );
 
@@ -203,8 +200,7 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
 					if ( errno != EEXIST )
 						fprintf(stderr, "mkdir() error (%d).\n", errno);
 
-
-				/* JSON init */
+				/* parsing json */
 				json_t * json;
 				json_error_t json_err;
 				json = json_loads( r, 0, &json_err );
@@ -220,7 +216,6 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl)
 				/* iterations in array */
 				size_t index;
 				json_t * el;
-				//			json_t * biggest;
 				json_array_foreach( rsp, index, el )
 				{
 					photo( dirchar, curpath, fileurl, el, curl, NULL, -1 );
@@ -257,16 +252,17 @@ get_wall( long long id, char * idpath, CURL * curl )
 		if ( errno != EEXIST )
 			fprintf(stderr, "mkdir() error (%d).\n", errno);
 
-	/* starting loop */
+	/* loop start */
 	int offset = 0;
 	long long posts_count = 0;
 	do
 	{
-		sprintf(url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s", id, LIMIT_W, offset, TOKEN);
+		sprintf(url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s",
+				id, LIMIT_W, offset, TOKEN);
 		char * r;
 		r = vk_get_request( url, curl );
 
-		/* JSON init */
+		/* parsing json */
 		json_t * json;
 		json_error_t json_err;
 		json = json_loads( r, 0, &json_err );
@@ -330,7 +326,8 @@ get_wall( long long id, char * idpath, CURL * curl )
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
-							fprintf( posts, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n", js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
+							fprintf( posts, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
+									js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
 						}
 #undef ZZ
 
@@ -399,7 +396,7 @@ get_docs( long long id, char * idpath, CURL * curl )
 	char * r;
 	r = vk_get_request( url, curl );
 
-	/* JSON init */
+	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
@@ -455,11 +452,12 @@ get_friends( long long id, char * idpath, CURL * curl )
 	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
 	FILE * outptr = fopen( outfl, "w" );
 
-	sprintf( url, "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s", id, TOKEN );
+	sprintf( url, "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s",
+			id, TOKEN );
 	char * r;
 	r = vk_get_request( url, curl );
 
-	/* JSON init */
+	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
@@ -504,7 +502,7 @@ get_groups( long long id, char * idpath, CURL * curl )
 	char * r;
 	r = vk_get_request( url, curl );
 
-	/* JSON init */
+	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
@@ -558,7 +556,7 @@ get_music( long long id, char * idpath, CURL * curl )
 	char * r;
 	r = vk_get_request( url, curl );
 
-	/* JSON init */
+	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
@@ -619,7 +617,7 @@ get_videos( long long id, char * idpath, CURL * curl )
 //	char * r_pre;
 //	r_pre = vk_get_request( url, curl );
 
-	/* JSON init */
+	/* parsing json */
 //	json_t * json;
 //	json_error_t json_err;
 //	json = json_loads( r_pre, 0, &json_err );
@@ -645,7 +643,8 @@ get_videos( long long id, char * idpath, CURL * curl )
 	for ( offset = 0; offset <= times; ++offset )
 	{
 		/* creating request */
-		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s", id, offset * LIMIT_V, LIMIT_V, TOKEN );
+		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s",
+				id, offset * LIMIT_V, LIMIT_V, TOKEN );
 		char * r;
 		r = vk_get_request( url, curl );
 
@@ -710,6 +709,7 @@ main( int argc, char ** argv )
 	long long id = get_id( argc, argv, curl );
 	if ( id == 0 )
 		return 2;
+
 	char user_dir[bufs];
 	char name_descript[bufs];
 	if ( usr.is_ok == 0 )
@@ -771,8 +771,8 @@ main( int argc, char ** argv )
 	if ( types.audio == 1 )
 		get_music( id, user_dir, curl );
 
-//	if ( types.video == 1 )
-//	get_videos( id, user_dir, curl );
+	if ( types.video == 1 )
+		get_videos( id, user_dir, curl );
 
 	curl_easy_cleanup(curl);
 	return 0;
