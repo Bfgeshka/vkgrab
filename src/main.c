@@ -12,10 +12,8 @@ get_albums( long long id, CURL * curl )
 	/* getting albums */
 	char * url = malloc( bufs );
 	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s", id, TOKEN );
-
-	char * r;
-	r = vk_get_request(url, curl);
-	free(url);
+	char * r = vk_get_request( url, curl );
+	free( url );
 
 	/* parsing json */
 	json_t * json;
@@ -27,38 +25,38 @@ get_albums( long long id, CURL * curl )
 		return 0;
 	}
 
-	/* simplifying json */
+	/* finding response */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
-	if (!rsp)
+	if ( !rsp )
 	{
 		fprintf( stderr, "Album JSON error.\n" );
 		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 		return 0;
 	}
 
-	/* getting albums metadata*/
-	size_t arr_size = json_array_size(rsp);
+	/* getting albums metadata */
+	size_t arr_size = json_array_size( rsp );
 
 	if ( arr_size > 0 )
 	{
 		json_t * el;
 		size_t index;
-		printf("\nAlbums: %lu.\n", (unsigned long) arr_size);
-		albums = malloc( arr_size * sizeof(struct data_album) );
+		printf( "\nAlbums: %lu.\n", ( unsigned long ) arr_size );
+		albums = malloc( arr_size * sizeof( struct data_album ) );
 		json_array_foreach( rsp, index, el )
 		{
-			albums[index].aid = js_get_int(el, "aid");
-			albums[index].size = js_get_int(el, "size");
-			strncpy( albums[index].title, js_get_str(el, "title" ), bufs);
+			albums[index].aid = js_get_int( el, "aid" );
+			albums[index].size = js_get_int( el, "size" );
+			strncpy( albums[index].title, js_get_str( el, "title" ), bufs );
 			printf( "Album: %s (id:%lld, #:%lld).\n",
 			        albums[index].title, albums[index].aid, albums[index].size );
 			photos_count += albums[index].size;
 		}
 	}
 	else
-		printf("No albums found.\n");
+		puts( "No albums found." );
 
 	return arr_size;
 }
@@ -70,15 +68,15 @@ get_id( int argc, char ** argv, CURL * curl )
 	usr.is_ok = 1;
 	grp.is_ok = 1;
 
-	if ( argc == 1 || (argv[1][0] == '-' && argv[1][1] == 'h' ) )
+	if ( argc == 1 || ( argv[1][0] == '-' && argv[1][1] == 'h' ) )
 	{
 		help_print();
 		return 0;
 	}
-	else if (argc == 2)
+	else if ( argc == 2 )
 	{
-		usr = user(argv[1], curl);
-		grp = group(argv[1], curl);
+		usr = user( argv[1], curl );
+		grp = group( argv[1], curl );
 	}
 	else
 		for ( int t = 0; t < argc; ++t )
@@ -86,9 +84,9 @@ get_id( int argc, char ** argv, CURL * curl )
 			if ( argv[t][0] == '-' )
 			{
 				if ( argv[t][1] == 'u' )
-					usr = user(argv[t+1], curl);
+					usr = user( argv[t+1], curl );
 				if ( argv[t][1] == 'g' )
-					grp = group(argv[t+1], curl);
+					grp = group( argv[t+1], curl );
 				if ( argv[t][1] == 't' )
 				{
 					if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
@@ -134,10 +132,10 @@ get_id( int argc, char ** argv, CURL * curl )
 					return 0;
 				}
 			}
-			if ( (t == argc - 1) && (usr.is_ok == 1) && (grp.is_ok == 1) )
+			if ( ( t == argc - 1 ) && ( usr.is_ok == 1 ) && ( grp.is_ok == 1 ) )
 			{
-				usr = user(argv[t], curl);
-				grp = group(argv[t], curl);
+				usr = user( argv[t], curl );
+				grp = group( argv[t], curl );
 			}
 		}
 
@@ -187,15 +185,14 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 				/* creating request */
 				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s",
 				         id, albums[i].aid, offset * LIMIT_A, TOKEN );
-				char * r;
-				r = vk_get_request( url, curl );
+				char * r = vk_get_request( url, curl );
 
 				/* creating album directory */
 				fix_filename( alchar );
 				sprintf( dirchar, "%s/%s", idpath, alchar );
 				if ( mkdir( dirchar, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 					if ( errno != EEXIST )
-						fprintf(stderr, "mkdir() error (%d).\n", errno);
+						fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 				/* parsing json */
 				json_t * json;
@@ -204,10 +201,10 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 				if ( !json )
 					fprintf( stderr, "JSON photos.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-				/* simplifying json */
+				/* finding response */
 				json_t * rsp;
 				rsp = json_object_get( json, "response" );
-				if (!rsp)
+				if ( !rsp )
 					fprintf( stderr, "Album error\n" );
 
 				/* iterations in array */
@@ -242,17 +239,16 @@ get_wall( long long id, char * idpath, CURL * curl )
 
 	if ( mkdir( curpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
-			fprintf(stderr, "mkdir() error (%d).\n", errno);
+			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* loop start */
 	int offset = 0;
 	long long posts_count = 0;
 	do
 	{
-		sprintf(url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s",
-		        id, LIMIT_W, offset, TOKEN);
-		char * r;
-		r = vk_get_request( url, curl );
+		sprintf( url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s",
+		        id, LIMIT_W, offset, TOKEN );
+		char * r = vk_get_request( url, curl );
 
 		/* parsing json */
 		json_t * json;
@@ -261,14 +257,14 @@ get_wall( long long id, char * idpath, CURL * curl )
 		if ( !json )
 			fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-		/* simplifying json */
+		/* finding response */
 		json_t * rsp;
 		rsp = json_object_get( json, "response" );
-		if (!rsp)
+		if ( !rsp )
 		{
 			fprintf( stderr, "Wall error\n" );
 			rsp = json_object_get( json, "error" );
-			fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+			fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 		}
 
 		/* getting posts count */
@@ -277,7 +273,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 			json_t * temp_json;
 			temp_json = json_array_get( rsp, 0 );
 			posts_count = json_integer_value( temp_json );
-			printf("Posts: %lld\n", posts_count);
+			printf( "Posts: %lld\n", posts_count );
 		}
 
 		/* iterations in array */
@@ -292,13 +288,13 @@ get_wall( long long id, char * idpath, CURL * curl )
 			{
 				p_id = js_get_int( el, "id" );
 				p_date = js_get_int( el, "date" );
-				fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str(el, "text") );
+				fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str( el, "text" ) );
 
 				json_t * att_json;
 				att_json = json_object_get( el, "attachments" );
-				if (att_json)
+				if ( att_json )
 				{
-					size_t arr_size = json_array_size(att_json);
+					size_t arr_size = json_array_size( att_json );
 					for ( size_t att_i = 0; att_i < arr_size; ++att_i )
 					{
 						json_t * att_el = json_array_get( att_json, att_i );
@@ -349,7 +345,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 //#undef ZZ
 					}
 				}
-				fprintf(posts, "------\n\n");
+				fprintf( posts, "------\n\n" );
 			}
 		}
 
@@ -376,12 +372,12 @@ get_docs( long long id, char * idpath, CURL * curl )
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
-			fprintf(stderr, "mkdir() error (%d).\n", errno);
+			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* Sending API request docs.get */
-	sprintf( url, "https://api.vk.com/method/docs.get?owner_id=%lld%s", id, TOKEN);
-	char * r;
-	r = vk_get_request( url, curl );
+	sprintf( url, "https://api.vk.com/method/docs.get?owner_id=%lld%s", id, TOKEN );
+	char * r = vk_get_request( url, curl );
+	free( url );
 
 	/* parsing json */
 	json_t * json;
@@ -390,14 +386,14 @@ get_docs( long long id, char * idpath, CURL * curl )
 	if ( !json )
 		fprintf( stderr, "JSON docs.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-	/* simplifying json */
+	/* finding response */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
-	if (!rsp)
+	if ( !rsp )
 	{
 		fprintf( stderr, "Documents JSON error.\n" );
 		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 	}
 
 	/* Show documents count */
@@ -415,7 +411,6 @@ get_docs( long long id, char * idpath, CURL * curl )
 			document( dirpath, doc_path, el, curl, NULL, -1 );
 	}
 
-	free( url );
 	free( dirpath );
 	free( doc_path );
 }
@@ -431,8 +426,8 @@ get_friends( long long id, char * idpath, CURL * curl )
 
 	sprintf( url, "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s",
 	         id, TOKEN );
-	char * r;
-	r = vk_get_request( url, curl );
+	char * r = vk_get_request( url, curl );
+	free( url );
 
 	/* parsing json */
 	json_t * json;
@@ -441,14 +436,14 @@ get_friends( long long id, char * idpath, CURL * curl )
 	if ( !json )
 		fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-	/* simplifying json */
+	/* finding response */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
-	if (!rsp)
+	if ( !rsp )
 	{
 		fprintf( stderr, "Friends JSON error.\n" );
 		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 	}
 
 	/* iterations in array */
@@ -456,12 +451,11 @@ get_friends( long long id, char * idpath, CURL * curl )
 	json_t * el;
 	json_array_foreach( rsp, index, el )
 	{
-		fprintf( outptr, "%s\n", js_get_str(el, "domain") );
+		fprintf( outptr, "%s\n", js_get_str( el, "domain" ) );
 	}
 
-	printf("\nFriends list (of %lu) saved!\n", (unsigned long) index);
+	printf( "\nFriends list (of %lu) saved!\n", ( unsigned long ) index );
 
-	free( url );
 	free( outfl );
 	fclose( outptr );
 }
@@ -476,8 +470,8 @@ get_groups( long long id, char * idpath, CURL * curl )
 	FILE * outptr = fopen( outfl, "w" );
 
 	sprintf( url, "https://api.vk.com/method/groups.get?user_id=%lld&extended=1%s", id, TOKEN );
-	char * r;
-	r = vk_get_request( url, curl );
+	char * r = vk_get_request( url, curl );
+	free( url );
 
 	/* parsing json */
 	json_t * json;
@@ -486,14 +480,14 @@ get_groups( long long id, char * idpath, CURL * curl )
 	if ( !json )
 		fprintf( stderr, "JSON groups.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-	/* simplifying json */
+	/* finding response */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
-	if (!rsp)
+	if ( !rsp )
 	{
 		fprintf( stderr, "Groups JSON error.\n" );
 		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 	}
 
 	/* iterations in array */
@@ -502,12 +496,11 @@ get_groups( long long id, char * idpath, CURL * curl )
 	json_array_foreach( rsp, index, el )
 	{
 		if ( index != 0 )
-			fprintf( outptr, "%s\n", js_get_str(el, "screen_name") );
+			fprintf( outptr, "%s\n", js_get_str( el, "screen_name" ) );
 	}
 
-	printf("Communities list (of %lu) saved!\n", (unsigned long) index - 1);
+	printf( "Communities list (of %lu) saved!\n", ( unsigned long ) index - 1 );
 
-	free( url );
 	free( outfl );
 	fclose( outptr );
 }
@@ -523,11 +516,11 @@ get_music( long long id, char * idpath, CURL * curl )
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_AUDIO );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
-			fprintf(stderr, "mkdir() error (%d).\n", errno);
+			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	sprintf( url, "https://api.vk.com/method/audio.get?owner_id=%lld&need_user=0%s", id, TOKEN );
-	char * r;
-	r = vk_get_request( url, curl );
+	char * r = vk_get_request( url, curl );
+	free( url );
 
 	/* parsing json */
 	json_t * json;
@@ -536,14 +529,14 @@ get_music( long long id, char * idpath, CURL * curl )
 	if ( !json )
 		fprintf( stderr, "JSON audio.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-	/* simplifying json */
+	/* finding response */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
-	if (!rsp)
+	if ( !rsp )
 	{
 		fprintf( stderr, "Music response JSON error.\n" );
 		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 	}
 
 	size_t index;
@@ -551,13 +544,12 @@ get_music( long long id, char * idpath, CURL * curl )
 	json_array_foreach( rsp, index, el )
 	{
 		if ( index == 0 )
-			printf( "\nTracks: %lld\n", json_integer_value(el) );
+			printf( "\nTracks: %lld\n", json_integer_value( el ) );
 		else
 			audiofile( dirpath, trackpath, el, curl, NULL, -1 );
 	}
 
 	free( dirpath );
-	free( url );
 	free( trackpath );
 }
 
@@ -572,7 +564,7 @@ get_videos( long long id, char * idpath, CURL * curl )
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
-			fprintf(stderr, "mkdir() error (%d).\n", errno);
+			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* creating log file with external links */
 	char * vid_log_path;
@@ -593,7 +585,7 @@ get_videos( long long id, char * idpath, CURL * curl )
 //	if ( !json )
 //		fprintf( stderr, "JSON scout video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-	/* simplifying json */
+	/* finding response */
 //	json_t * rsp;
 //	rsp = json_object_get( json, "response" );
 //	if (!rsp)
@@ -624,10 +616,10 @@ get_videos( long long id, char * idpath, CURL * curl )
 		if ( !json )
 			fprintf( stderr, "JSON video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-		/* simplifying json */
+		/* finding response */
 		json_t * rsp;
 		rsp = json_object_get( json, "response" );
-		if (!rsp)
+		if ( !rsp )
 		{
 			fprintf( stderr, "Videos JSON error.\n" );
 			rsp = json_object_get( json, "error" );
@@ -642,7 +634,7 @@ get_videos( long long id, char * idpath, CURL * curl )
 			if ( index == 0 && offset == 0 )
 			{
 				vid_count = json_integer_value( json_array_get( rsp, 0 ) );
-				printf("\nVideos: %lld\n", vid_count);
+				printf( "\nVideos: %lld\n", vid_count );
 			}
 			vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
 		}
@@ -687,7 +679,7 @@ main( int argc, char ** argv )
 		sprintf( user_dir, "%s(%lld)", usr.screenname, usr.uid );
 		sprintf( name_descript, "%s_%s",  usr.fname, usr.lname );
 	}
-	else if (grp.is_ok == 0)
+	else if ( grp.is_ok == 0 )
 	{
 		sprintf( user_dir, "%s(%lld)", grp.screenname, grp.gid );
 		sprintf( name_descript, "%s",  grp.name );
@@ -702,7 +694,7 @@ main( int argc, char ** argv )
 	fix_filename( user_dir );
 	if ( mkdir( user_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
-			fprintf(stderr, "mkdir() error (%d).\n", errno);
+			fprintf( stderr, "mkdir() error (%d).\n", errno );
 	char name_dsc_path[bufs];
 	sprintf( name_dsc_path, "%s/%s", user_dir, FILNAME_IDNAME );
 	FILE * u_name = fopen( name_dsc_path, "w" );
@@ -719,7 +711,7 @@ main( int argc, char ** argv )
 		if ( arr_size > 0 )
 		{
 			get_albums_files( id, arr_size, user_dir, curl );
-			free(albums);
+			free( albums );
 		}
 	}
 
@@ -727,16 +719,16 @@ main( int argc, char ** argv )
 	if ( types.docmt == 1 )
 		get_docs( id, user_dir, curl );
 
-	if ( usleep( (unsigned int) USLEEP_INT ) != 0 ) puts("sleep error");
+	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "sleep error" );
 
 	if ( id > 0 )
 	{
 		get_friends( id, user_dir, curl );
-		if ( usleep( (unsigned int) USLEEP_INT ) != 0 ) puts("sleep error");
+		if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "sleep error" );
 		get_groups( id, user_dir, curl );
 	}
 
-	if ( usleep( (unsigned int) USLEEP_INT ) != 0 ) puts("sleep error");
+	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "sleep error" );
 
 	if ( types.audio == 1 )
 		get_music( id, user_dir, curl );
@@ -744,6 +736,6 @@ main( int argc, char ** argv )
 	if ( types.video == 1 )
 		get_videos( id, user_dir, curl );
 
-	curl_easy_cleanup(curl);
+	curl_easy_cleanup( curl );
 	return 0;
 }

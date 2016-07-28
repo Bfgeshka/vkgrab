@@ -7,7 +7,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#define _XOPEN_SOURCE 501
 
 struct crl_st
 {
@@ -20,10 +19,10 @@ crl_callback( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 {
 	/* curl has strange ways, pretty often they can do it better */
 	size_t rsize = wk_nmemb * wk_size;
-	struct crl_st * p = (struct crl_st *) upoint;
+	struct crl_st * p = ( struct crl_st * ) upoint;
 
 	/* allocation for new size */
-	p->payload = (char *) realloc(p->payload, p->size + rsize + 1);
+	p->payload = ( char * ) realloc( p->payload, p->size + rsize + 1 );
 	if ( p->payload == NULL )
 	{
 		fprintf( stderr, "Reallocation failed in crl_callback()\n" );
@@ -31,7 +30,7 @@ crl_callback( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 	}
 
 	/* making valid string */
-	memcpy(&(p->payload[p->size]), content, rsize);
+	memcpy( &( p->payload[p->size] ), content, rsize );
 	p->size += rsize;
 	p->payload[p->size] = 0;
 	return rsize;
@@ -43,30 +42,30 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	CURLcode code;
 
 	fetch_str->size = 0;
-	fetch_str->payload = (char *) calloc( 1, sizeof(fetch_str->payload) );
-	if (fetch_str->payload == NULL)
+	fetch_str->payload = ( char * ) calloc( 1, sizeof( fetch_str->payload ) );
+	if ( fetch_str->payload == NULL )
 	{
 		fprintf( stderr, "Allocation failed in crl_fetch()\n" );
 		return CURLE_FAILED_INIT;
 	}
 
-	curl_easy_setopt(hc, CURLOPT_URL, url);
-	curl_easy_setopt(hc, CURLOPT_WRITEFUNCTION, crl_callback);
-	curl_easy_setopt(hc, CURLOPT_WRITEDATA, (void *) fetch_str);
-	curl_easy_setopt(hc, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-//	curl_easy_setopt(hc, CURLOPT_TIMEOUT, 5);
-//	curl_easy_setopt(hc, CURLOPT_FOLLOWLOCATION, 1);
-//	curl_easy_setopt(hc, CURLOPT_MAXREDIRS, 1);
-	curl_easy_setopt(hc, CURLOPT_VERBOSE, CRL_VERBOSITY);
-	code = curl_easy_perform(hc);
+	curl_easy_setopt( hc, CURLOPT_URL, url );
+	curl_easy_setopt( hc, CURLOPT_WRITEFUNCTION, crl_callback );
+	curl_easy_setopt( hc, CURLOPT_WRITEDATA, ( void * ) fetch_str );
+	curl_easy_setopt( hc, CURLOPT_USERAGENT, "libcurl-agent/1.0" );
+//	curl_easy_setopt( hc, CURLOPT_TIMEOUT, 5 );
+//	curl_easy_setopt( hc, CURLOPT_FOLLOWLOCATION, 1 );
+//	curl_easy_setopt( hc, CURLOPT_MAXREDIRS, 1 );
+	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
+	code = curl_easy_perform( hc );
 	return code;
 }
 
 size_t
-write_file(void * ptr, size_t size, size_t nmemb, FILE * stream)
+write_file( void * ptr, size_t size, size_t nmemb, FILE * stream )
 {
 	size_t written;
-	written = fwrite(ptr, size, nmemb, stream);
+	written = fwrite( ptr, size, nmemb, stream );
 	return written;
 }
 
@@ -86,12 +85,12 @@ vk_get_request( const char * url, CURL * hc )
 	/* checking result */
 	if ( code != CURLE_OK || cf->size < 1 )
 	{
-		fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
+		fprintf( stderr, "GET error: %s\n", curl_easy_strerror( code ) );
 		return "err2";
 	}
 	if ( !cf->payload )
 	{
-		fprintf( stderr, "Callback is empty, nothing to do here\n");
+		fprintf( stderr, "Callback is empty, nothing to do here\n" );
 		return "err3";
 	}
 
@@ -101,7 +100,7 @@ vk_get_request( const char * url, CURL * hc )
 size_t
 vk_get_file( const char * url, const char * filepath, CURL * curl )
 {
-	if (curl)
+	if ( curl )
 	{
 		/* skip downloading if file exists */
 		errno = 0;
@@ -112,7 +111,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		err = errno;
 		if ( fr != NULL )
 		{
-			fclose(fr);
+			fclose( fr );
 			if (stat( filepath, &fst ) != -1 )
 				file_size = (long long) fst.st_size;
 
@@ -125,23 +124,23 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		if ( err == ENOENT || file_size == 0 )
 		{
 			fflush( stdout );
-			FILE * fw = fopen( filepath, "w");
-			curl_easy_setopt(curl, CURLOPT_URL, url);
-			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_file);
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, fw);
-			curl_easy_setopt(curl, CURLOPT_VERBOSE, CRL_VERBOSITY);
-			curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-			curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 2);
+			FILE * fw = fopen( filepath, "w" );
+			curl_easy_setopt( curl, CURLOPT_URL, url );
+			curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_file );
+			curl_easy_setopt( curl, CURLOPT_WRITEDATA, fw );
+			curl_easy_setopt( curl, CURLOPT_VERBOSE, CRL_VERBOSITY );
+			curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
+			curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 2 );
 			CURLcode code;
-			code = curl_easy_perform(curl);
+			code = curl_easy_perform( curl );
 
 			if ( code != CURLE_OK )
 			{
-				fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror(code), url );
+				fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror( code ), url );
 				return 1;
 			}
 			curl_easy_reset( curl );
-			fclose(fw);
+			fclose( fw );
 			fprintf( stdout, "\tOK\n" );
 		}
 	}

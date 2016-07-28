@@ -1,4 +1,4 @@
-#include "api.c"
+#include "curl_req.c"
 #include <jansson.h>
 
 struct data_user
@@ -149,9 +149,7 @@ fix_filename( char * dirty )
 	for ( int i = 0; i < name_length; ++i )
 	{
 		if ( dirty[i] == '/' || dirty[i] == ':' || dirty[i] == '\\' )
-		{
 			dirty[i] = '_';
-		}
 	}
 }
 
@@ -249,14 +247,12 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 
 	printf( "%s ", filepath );
 	vk_get_file( js_get_str( aud_el, "url" ), filepath, curl );
-
 }
 
 void
 vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long vid;
-//	char * fileurl = malloc( bufs );
 	const char * fileurl;
 	vid = js_get_int( vid_el, "vid" );
 
@@ -264,8 +260,6 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 		fprintf( log, "ATTACH: VIDEO FOR %lld: %lld, (\"%s\")\n", p_id, vid, js_get_str( vid_el, "title" ) );
 	else
 		fprintf( log, "\n%lld:(\"%s\")", vid, js_get_str( vid_el, "title" ) );
-
-
 
 	json_t * v_block;
 	v_block = json_object_get( vid_el, "files" );
@@ -323,12 +317,12 @@ void
 help_print()
 {
 	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
-	puts("Or:\tvkgrab <USER|GROUP>");
 	puts("");
-	puts("\t-t TOKEN\tgive a valid token without header \"&access_token=\"");
-	puts("\t-u USER\tignoring group with same screenname");
-	puts("\t-g GROUP\tignoring user with same screenname");
-	puts("\t-ya, -yv, -yd, -yp\tallows downloading audio, video, documents or pictures");
-	puts("\t-na, -nv, -nd, -np\tforbids downloading audio, video, documents or pictures");
-	puts("If both USER and GROUP do exists, group id would be proceeded");
+	puts("Options:");
+	puts("\t-t TOKEN\t\tgive a valid token without header \"&access_token=\"");
+	puts("\t-u USER\t\t\tignoring group with same screenname");
+	puts("\t-g GROUP\t\tignoring user with same screenname");
+	puts("\t-ya, -yv, -yd, -yp\tallows downloading of audio, video, documents or pictures");
+	puts("\t-na, -nv, -nd, -np\tforbids downloading of audio, video, documents or pictures");
+	puts("If both USER and GROUP do exist, group id proceeds");
 }
