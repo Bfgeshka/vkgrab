@@ -6,9 +6,9 @@ struct data_user
 	long long uid;
 	/* 0 means ok */
 	short is_ok;
-	char fname[bufs];
-	char lname[bufs];
-	char screenname[bufs];
+	char fname[bufs/2];
+	char lname[bufs/2];
+	char screenname[bufs/2];
 };
 
 struct data_group
@@ -17,9 +17,9 @@ struct data_group
 	long long is_closed;
 	/* 0 means ok */
 	short is_ok;
-	char screenname[bufs];
-	char name[bufs];
-	char type[bufs];
+	char screenname[bufs/2];
+	char name[bufs/2];
+	char type[bufs/4];
 };
 
 struct data_album
@@ -55,7 +55,7 @@ struct data_user
 user( char * name, CURL * curl )
 {
 	struct data_user usr;
-	strncpy( usr.screenname, name, bufs );
+	strncpy( usr.screenname, name, bufs/2 );
 	usr.is_ok = 0;
 
 	char * url = NULL;
@@ -89,8 +89,8 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	usr.uid = js_get_int( el, "uid" );
-	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs );
-	strncpy( usr.lname, js_get_str( el, "last_name" ), bufs);
+	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs/2 );
+	strncpy( usr.lname, js_get_str( el, "last_name" ), bufs/2 );
 
 	return usr;
 }
@@ -135,9 +135,9 @@ group( char * name, CURL * curl )
 	/* filling struct */
 	grp.gid = js_get_int( el, "gid" );
 	grp.is_closed = js_get_int( el, "is_closed" );
-	strncpy( grp.name, js_get_str( el, "name" ), bufs );
-	strncpy( grp.type, js_get_str( el, "type" ), bufs );
-	strncpy( grp.screenname, name, bufs );
+	strncpy( grp.name, js_get_str( el, "name" ), bufs/2 );
+	strncpy( grp.type, js_get_str( el, "type" ), bufs/4 );
+	strncpy( grp.screenname, name, bufs/2 );
 
 	return grp;
 }
@@ -145,7 +145,8 @@ group( char * name, CURL * curl )
 void
 fix_filename( char * dirty )
 {
-	for ( int i = 0; i < strlen( dirty ); ++i )
+	size_t name_length = strlen( dirty );
+	for ( int i = 0; i < name_length; ++i )
 	{
 		if ( dirty[i] == '/' || dirty[i] == ':' || dirty[i] == '\\' )
 		{
@@ -156,7 +157,7 @@ fix_filename( char * dirty )
 
 
 void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
-photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
+photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long pid;
 	json_t * biggest;
@@ -164,34 +165,23 @@ photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el,
 	pid = js_get_int( photo_el, "pid" );
 	if ( p_id > 0 )
 		fprintf( log, "ATTACH: PHOTO FOR %lld: %lld\n", p_id, pid);
+
 	biggest = json_object_get( photo_el, "src_xxxbig" );
-	if ( biggest )
-		fileurl = json_string_value( biggest );
-	else
+	if ( !biggest )
 	{
 		biggest = json_object_get( photo_el, "src_xxbig" );
-		if ( biggest )
-			fileurl = json_string_value( biggest );
-		else
+		if ( !biggest )
 		{
 			biggest = json_object_get( photo_el, "src_xbig" );
-			if ( biggest )
-				fileurl = json_string_value( biggest );
-			else
+			if ( !biggest )
 			{
 				biggest = json_object_get( photo_el, "src_big" );
-				if ( biggest )
-					fileurl = json_string_value( biggest );
-				else
+				if ( !biggest )
 				{
 					biggest = json_object_get( photo_el, "src" );
-					if ( biggest )
-						fileurl = json_string_value( biggest );
-					else
+					if ( !biggest )
 					{
 						biggest = json_object_get( photo_el, "src_small" );
-						if ( biggest )
-							fileurl = json_string_value( biggest );
 					}
 				}
 			}
@@ -205,11 +195,11 @@ photo( char * dirpath, char * filepath, const char * fileurl, json_t * photo_el,
 		sprintf( filepath, "%s/%lld.jpg", dirpath, pid );
 
 	printf( "%s ", filepath );
-	vk_get_file( fileurl, filepath, curl );
+	vk_get_file( json_string_value( biggest ), filepath, curl );
 }
 
 void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
-document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el, CURL * curl, FILE * log, long long p_id )
+document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long did;
 	did = js_get_int( doc_el, "did" );
@@ -224,19 +214,19 @@ document( char * dirpath, char * filepath, const char * fileurl, json_t * doc_el
 
 
 	printf( "%s ", filepath );
-	fileurl = js_get_str( doc_el, "url" );
-	vk_get_file( fileurl, filepath, curl );
+	vk_get_file( js_get_str( doc_el, "url" ), filepath, curl );
 }
 
 void
-audiofile( char * dirpath, char * filepath, const char * fileurl, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
+audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long aid;
-	char * dirty = malloc( bufs/2 );
 	aid = js_get_int( aud_el, "aid" );
-
+	char * dirty = malloc( bufs/2 );
 	char * tr_art = malloc( a_field );
 	char * tr_tit = malloc( a_field );
+//	const char * fileurl;
+
 	strncpy( tr_art, js_get_str( aud_el, "artist" ), a_field );
 	strncpy( tr_tit, js_get_str( aud_el, "title" ), a_field );
 
@@ -254,16 +244,23 @@ audiofile( char * dirpath, char * filepath, const char * fileurl, json_t * aud_e
 		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
 
-	printf( "%s ", filepath );
-	fileurl = js_get_str( aud_el, "url" );
+	free( tr_art );
+	free( tr_tit );
 	free( dirty );
-	vk_get_file( fileurl, filepath, curl );
+
+	printf( "%s ", filepath );
+//	fileurl = js_get_str( aud_el, "url" );
+//	vk_get_file( fileurl, filepath, curl );
+	vk_get_file( js_get_str( aud_el, "url" ), filepath, curl );
+
 }
 
 void
-vid_file( char * dirpath, char * filepath, const char * fileurl, json_t * vid_el, CURL * curl, FILE * log, long long p_id )
+vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long vid;
+//	char * fileurl = malloc( bufs );
+	const char * fileurl;
 	vid = js_get_int( vid_el, "vid" );
 
 	if ( p_id > 0 )

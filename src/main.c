@@ -1,7 +1,5 @@
 #include "methods.c"
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+
 
 struct data_user usr;
 struct data_group grp;
@@ -13,8 +11,10 @@ size_t
 get_albums( long long id, CURL * curl )
 {
 	/* getting albums */
-	char *url = NULL;
-	url = malloc( bufs );
+//	char *url = NULL;
+//	url = malloc( bufs );
+	char * url = malloc( bufs );
+
 	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s", id, TOKEN );
 	char * r;
 	r = vk_get_request(url, curl);
@@ -56,7 +56,7 @@ get_albums( long long id, CURL * curl )
 			albums[index].size = js_get_int(el, "size");
 			strncpy( albums[index].title, js_get_str(el, "title" ), bufs);
 			printf( "Album: %s (id:%lld, #:%lld).\n",
-					albums[index].title, albums[index].aid, albums[index].size );
+			        albums[index].title, albums[index].aid, albums[index].size );
 			photos_count += albums[index].size;
 		}
 	}
@@ -131,6 +131,11 @@ get_id( int argc, char ** argv, CURL * curl )
 						return 0;
 					}
 				}
+				if ( argv[t][1] == 'h' )
+				{
+					help_print();
+					return 0;
+				}
 			}
 			if ( (t == argc - 1) && (usr.is_ok == 1) && (grp.is_ok == 1) )
 			{
@@ -144,13 +149,13 @@ get_id( int argc, char ** argv, CURL * curl )
 	{
 		id = - grp.gid;
 		printf( "Group: %s (%s).\nGroup ID: %lld.\nType: %s.\nIs closed: %lld.\n\n",
-				grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed );
+		        grp.name, grp.screenname, grp.gid, grp.type, grp.is_closed );
 	}
 	else if ( usr.is_ok == 0 )
 	{
 		id = usr.uid;
 		printf( "User: %s %s (%s).\nUser ID: %lld.\n\n",
-				usr.fname, usr.lname, usr.screenname, usr.uid );
+		        usr.fname, usr.lname, usr.screenname, usr.uid );
 	}
 
 	return id;
@@ -159,15 +164,20 @@ get_id( int argc, char ** argv, CURL * curl )
 void
 get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 {
-	char * url;
-	char * curpath;
-	char * alchar;
-	char * dirchar;
-	url = malloc( bufs );
-	curpath = malloc( bufs );
-	alchar = malloc( bufs );
-	dirchar = malloc( bufs );
-	const char * fileurl;
+//	char * url;
+//	char * curpath;
+//	char * alchar;
+//	char * dirchar;
+//	url = malloc( bufs );
+//	curpath = malloc( bufs );
+//	alchar = malloc( bufs );
+//	dirchar = malloc( bufs );
+//	const char * fileurl;
+	char * url = malloc( bufs );
+	char * curpath = malloc( bufs );
+	char * alchar = malloc( bufs );
+	char * dirchar = malloc( bufs );
+//	char * fileurl = malloc( bufs );
 
 	for( int i = 0; i < arr_size; ++i )
 	{
@@ -189,7 +199,7 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 
 				/* creating request */
 				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s",
-						id, albums[i].aid, offset * LIMIT_A, TOKEN );
+				         id, albums[i].aid, offset * LIMIT_A, TOKEN );
 				char * r;
 				r = vk_get_request( url, curl );
 
@@ -218,7 +228,8 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 				json_t * el;
 				json_array_foreach( rsp, index, el )
 				{
-					photo( dirchar, curpath, fileurl, el, curl, NULL, -1 );
+//					photo( dirchar, curpath, fileurl, el, curl, NULL, -1 );
+					photo( dirchar, curpath, el, curl, NULL, -1 );
 				}
 			}
 		}
@@ -228,21 +239,17 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 	free( curpath );
 	free( url );
 	free( dirchar );
+//	free( fileurl );
 }
 
 void
 get_wall( long long id, char * idpath, CURL * curl )
 {
 	/* char allocation */
-	char * url;
-	char * curpath;
-	char * posts_path;
-	char * attach_path;
-	const char * fileurl;
-	url = malloc( bufs );
-	curpath = malloc( bufs );
-	posts_path = malloc( bufs );
-	attach_path = malloc( bufs );
+	char * url = malloc( bufs );
+	char * curpath = malloc( bufs );
+	char * posts_path = malloc( bufs );
+	char * attach_path = malloc( bufs );
 
 	sprintf( curpath, "%s/%s", idpath, DIRNAME_WALL );
 	sprintf( posts_path, "%s/%s", idpath, FILNAME_POSTS );
@@ -258,7 +265,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 	do
 	{
 		sprintf(url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s",
-				id, LIMIT_W, offset, TOKEN);
+		        id, LIMIT_W, offset, TOKEN);
 		char * r;
 		r = vk_get_request( url, curl );
 
@@ -306,7 +313,8 @@ get_wall( long long id, char * idpath, CURL * curl )
 				att_json = json_object_get( el, "attachments" );
 				if (att_json)
 				{
-					for ( size_t att_i = 0; att_i < json_array_size(att_json); ++att_i )
+					size_t arr_size = json_array_size(att_json);
+					for ( size_t att_i = 0; att_i < arr_size; ++att_i )
 					{
 						json_t * att_el = json_array_get( att_json, att_i );
 
@@ -318,7 +326,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.pictr == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
-							photo( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+							photo( curpath, attach_path, tmp_js, curl, posts, p_id );
 						}
 #undef ZZ
 
@@ -327,7 +335,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
 							fprintf( posts, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
-									js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
+							         js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
 						}
 #undef ZZ
 
@@ -335,7 +343,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.docmt == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
-							document( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+							document( curpath, attach_path, tmp_js, curl, posts, p_id );
 						}
 #undef ZZ
 
@@ -343,7 +351,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.audio == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
-							audiofile( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+							audiofile( curpath, attach_path, tmp_js, curl, posts, p_id );
 						}
 #undef ZZ
 
@@ -375,15 +383,9 @@ void
 get_docs( long long id, char * idpath, CURL * curl )
 {
 	/* char allocation */
-	char * url;
-	char * dirpath;
-	char * doc_path;
-//	char * log_path;
-	const char * fileurl;
-	url = malloc( bufs );
-	dirpath = malloc( bufs );
-	doc_path = malloc( bufs );
-//	log_path = malloc ( bufs );
+	char * url = malloc( bufs );
+	char * dirpath = malloc( bufs );
+	char * doc_path = malloc( bufs );
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
@@ -419,41 +421,31 @@ get_docs( long long id, char * idpath, CURL * curl )
 	long long docs_count = json_integer_value( temp_json );
 	printf("\nDocuments: %lld\n", docs_count);
 
-
-	/* Log file */
-//	sprintf( log_path, "%s/%s", idpath, FILNAME_DOCS );
-//	FILE * log_doc = fopen( log_path, "w" );
-//	fprintf( log_doc, "Documents: %lld\n\n", docs_count);
-
 	/* Loop init */
 	size_t index;
 	json_t * el;
-//	json_t * attached;
 	json_array_foreach( rsp, index, el )
 	{
 		if ( index != 0 )
-			document( dirpath, doc_path, fileurl, el, curl, NULL, -1 );
+			document( dirpath, doc_path, el, curl, NULL, -1 );
 	}
 
 	free( url );
 	free( dirpath );
 	free( doc_path );
-//	free( log_path );
-//	fclose( log_doc );
 }
 
 void
 get_friends( long long id, char * idpath, CURL * curl )
 {
-	char * url;
-	char * outfl;
-	url = malloc( bufs );
-	outfl = malloc( bufs );
+	char * url = malloc( bufs );
+	char * outfl = malloc( bufs );
+
 	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
 	FILE * outptr = fopen( outfl, "w" );
 
 	sprintf( url, "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s",
-			id, TOKEN );
+	         id, TOKEN );
 	char * r;
 	r = vk_get_request( url, curl );
 
@@ -483,6 +475,7 @@ get_friends( long long id, char * idpath, CURL * curl )
 	}
 
 	printf("\nFriends list (of %lu) saved!\n", (unsigned long) index);
+
 	free( url );
 	free( outfl );
 	fclose( outptr );
@@ -491,10 +484,9 @@ get_friends( long long id, char * idpath, CURL * curl )
 void
 get_groups( long long id, char * idpath, CURL * curl )
 {
-	char * url;
-	char * outfl;
-	url = malloc( bufs );
-	outfl = malloc( bufs );
+	char * url = malloc( bufs );
+	char * outfl = malloc( bufs );
+
 	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
 	FILE * outptr = fopen( outfl, "w" );
 
@@ -538,13 +530,16 @@ get_groups( long long id, char * idpath, CURL * curl )
 void
 get_music( long long id, char * idpath, CURL * curl )
 {
-	char * url;
-	char * dirpath;
-	char * trackpath;
-	const char * fileurl;
-	url = malloc( bufs );
-	dirpath = malloc( bufs );
-	trackpath = malloc( bufs );
+//	char * url;
+//	char * dirpath;
+//	char * trackpath;
+//	const char * fileurl;
+//	url = malloc( bufs );
+//	dirpath = malloc( bufs );
+//	trackpath = malloc( bufs );
+	char * url = malloc( bufs );
+	char * dirpath = malloc( bufs );
+	char * trackpath = malloc( bufs );
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_AUDIO );
@@ -580,7 +575,8 @@ get_music( long long id, char * idpath, CURL * curl )
 		if ( index == 0 )
 			printf( "\nTracks: %lld\n", json_integer_value(el) );
 		else
-			audiofile( dirpath, trackpath, fileurl, el, curl, NULL, -1 );
+			audiofile( dirpath, trackpath, el, curl, NULL, -1 );
+//			audiofile( dirpath, trackpath, fileurl, el, curl, NULL, -1 );
 	}
 
 	free( dirpath );
@@ -591,13 +587,9 @@ get_music( long long id, char * idpath, CURL * curl )
 void
 get_videos( long long id, char * idpath, CURL * curl )
 {
-	char * url;
-	char * dirpath;
-	char * vidpath;
-	const char * fileurl;
-	url = malloc( bufs );
-	dirpath = malloc( bufs );
-	vidpath = malloc( bufs );
+	char * url = malloc( bufs );
+	char * dirpath = malloc( bufs );
+	char * vidpath = malloc( bufs );
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
@@ -638,13 +630,13 @@ get_videos( long long id, char * idpath, CURL * curl )
 
 
 	/* Loop init */
-	int offset;
+	int offset = 0;
 	int times = 0;
-	for ( offset = 0; offset <= times; ++offset )
+	for ( ; offset <= times; ++offset )
 	{
 		/* creating request */
 		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s",
-				id, offset * LIMIT_V, LIMIT_V, TOKEN );
+		         id, offset * LIMIT_V, LIMIT_V, TOKEN );
 		char * r;
 		r = vk_get_request( url, curl );
 
@@ -675,13 +667,14 @@ get_videos( long long id, char * idpath, CURL * curl )
 				vid_count = json_integer_value( json_array_get( rsp, 0 ) );
 				printf("\nVideos: %lld\n", vid_count);
 			}
-			vid_file( dirpath, vidpath, fileurl, el, curl, vid_log, -1 );
+			vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
 		}
 
 		times = vid_count / LIMIT_V;
 	}
 
 	free( dirpath );
+	free( vid_log_path );
 	free( vidpath );
 	free( url );
 }
@@ -757,16 +750,16 @@ main( int argc, char ** argv )
 	if ( types.docmt == 1 )
 		get_docs( id, user_dir, curl );
 
-	if (usleep(USLEEP_INT)) printf ("sleep err");
+	if ( usleep( (unsigned int) USLEEP_INT ) != 0 ) puts("sleep error");
 
 	if ( id > 0 )
 	{
 		get_friends( id, user_dir, curl );
-		if (usleep(USLEEP_INT)) printf ("sleep err");
+		if ( usleep( (unsigned int) USLEEP_INT ) != 0 ) puts("sleep error");
 		get_groups( id, user_dir, curl );
 	}
 
-	if (usleep(USLEEP_INT)) printf ("sleep err");
+	if ( usleep( (unsigned int) USLEEP_INT ) != 0 ) puts("sleep error");
 
 	if ( types.audio == 1 )
 		get_music( id, user_dir, curl );

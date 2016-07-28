@@ -1,9 +1,13 @@
-#include <curl/curl.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "../config.h"
+#include <unistd.h>
+#include <curl/curl.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#define _XOPEN_SOURCE 501
 
 struct crl_st
 {
@@ -101,17 +105,24 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 	{
 		/* skip downloading if file exists */
 		errno = 0;
+		struct stat fst;
+		long long file_size = 0;
 		int err;
 		FILE * fr = fopen( filepath, "r" );
 		err = errno;
-		if ( fr )
+		if ( fr != NULL )
 		{
 			fclose(fr);
-			fprintf( stdout, "\tSKIP\n" );
-			return 0;
-		}
+			if (stat( filepath, &fst ) != -1 )
+				file_size = (long long) fst.st_size;
 
-		else if ( err == ENOENT )
+			if ( file_size > 0 )
+			{
+				fprintf( stdout, "\tSKIP\n" );
+				return 0;
+			}
+		}
+		if ( err == ENOENT || file_size == 0 )
 		{
 			fflush( stdout );
 			FILE * fw = fopen( filepath, "w");
