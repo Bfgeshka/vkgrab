@@ -225,7 +225,6 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 	char * dirty = malloc( bufs/2 );
 	char * tr_art = malloc( a_field );
 	char * tr_tit = malloc( a_field );
-//	const char * fileurl;
 
 	strncpy( tr_art, js_get_str( aud_el, "artist" ), a_field );
 	strncpy( tr_tit, js_get_str( aud_el, "title" ), a_field );
@@ -249,8 +248,6 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 	free( dirty );
 
 	printf( "%s ", filepath );
-//	fileurl = js_get_str( aud_el, "url" );
-//	vk_get_file( fileurl, filepath, curl );
 	vk_get_file( js_get_str( aud_el, "url" ), filepath, curl );
 
 }

@@ -1,6 +1,5 @@
 #include "methods.c"
 
-
 struct data_user usr;
 struct data_group grp;
 struct data_album * albums;
@@ -11,11 +10,9 @@ size_t
 get_albums( long long id, CURL * curl )
 {
 	/* getting albums */
-//	char *url = NULL;
-//	url = malloc( bufs );
 	char * url = malloc( bufs );
-
 	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s", id, TOKEN );
+
 	char * r;
 	r = vk_get_request(url, curl);
 	free(url);
@@ -164,20 +161,10 @@ get_id( int argc, char ** argv, CURL * curl )
 void
 get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 {
-//	char * url;
-//	char * curpath;
-//	char * alchar;
-//	char * dirchar;
-//	url = malloc( bufs );
-//	curpath = malloc( bufs );
-//	alchar = malloc( bufs );
-//	dirchar = malloc( bufs );
-//	const char * fileurl;
 	char * url = malloc( bufs );
 	char * curpath = malloc( bufs );
 	char * alchar = malloc( bufs );
 	char * dirchar = malloc( bufs );
-//	char * fileurl = malloc( bufs );
 
 	for( int i = 0; i < arr_size; ++i )
 	{
@@ -228,7 +215,6 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 				json_t * el;
 				json_array_foreach( rsp, index, el )
 				{
-//					photo( dirchar, curpath, fileurl, el, curl, NULL, -1 );
 					photo( dirchar, curpath, el, curl, NULL, -1 );
 				}
 			}
@@ -239,7 +225,6 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 	free( curpath );
 	free( url );
 	free( dirchar );
-//	free( fileurl );
 }
 
 void
@@ -530,13 +515,6 @@ get_groups( long long id, char * idpath, CURL * curl )
 void
 get_music( long long id, char * idpath, CURL * curl )
 {
-//	char * url;
-//	char * dirpath;
-//	char * trackpath;
-//	const char * fileurl;
-//	url = malloc( bufs );
-//	dirpath = malloc( bufs );
-//	trackpath = malloc( bufs );
 	char * url = malloc( bufs );
 	char * dirpath = malloc( bufs );
 	char * trackpath = malloc( bufs );
@@ -576,7 +554,6 @@ get_music( long long id, char * idpath, CURL * curl )
 			printf( "\nTracks: %lld\n", json_integer_value(el) );
 		else
 			audiofile( dirpath, trackpath, el, curl, NULL, -1 );
-//			audiofile( dirpath, trackpath, fileurl, el, curl, NULL, -1 );
 	}
 
 	free( dirpath );
