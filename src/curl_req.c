@@ -53,10 +53,10 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	curl_easy_setopt( hc, CURLOPT_WRITEFUNCTION, crl_callback );
 	curl_easy_setopt( hc, CURLOPT_WRITEDATA, ( void * ) fetch_str );
 	curl_easy_setopt( hc, CURLOPT_USERAGENT, "libcurl-agent/1.0" );
-//	curl_easy_setopt( hc, CURLOPT_TIMEOUT, 5 );
-//	curl_easy_setopt( hc, CURLOPT_FOLLOWLOCATION, 1 );
-//	curl_easy_setopt( hc, CURLOPT_MAXREDIRS, 1 );
-	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
+/*	curl_easy_setopt( hc, CURLOPT_TIMEOUT, 5 );
+	curl_easy_setopt( hc, CURLOPT_FOLLOWLOCATION, 1 );
+	curl_easy_setopt( hc, CURLOPT_MAXREDIRS, 1 );
+*/	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
 	code = curl_easy_perform( hc );
 	return code;
 }
@@ -117,7 +117,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 
 			if ( file_size > 0 )
 			{
-				fprintf( stdout, "\tSKIP\n" );
+				puts( "\tSKIP" );
 				return 0;
 			}
 		}
@@ -141,7 +141,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			}
 			curl_easy_reset( curl );
 			fclose( fw );
-			fprintf( stdout, "\tOK\n" );
+			puts( "\tOK" );
 		}
 	}
 

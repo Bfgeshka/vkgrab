@@ -146,7 +146,8 @@ void
 fix_filename( char * dirty )
 {
 	size_t name_length = strlen( dirty );
-	for ( int i = 0; i < name_length; ++i )
+	unsigned i;
+	for ( i = 0; i < name_length; ++i )
 	{
 		if ( dirty[i] == '/' || dirty[i] == ':' || dirty[i] == '\\' )
 			dirty[i] = '_';
@@ -310,7 +311,6 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 		}
 		vk_get_file( fileurl, filepath, curl );
 	}
-
 }
 
 void

@@ -1,3 +1,4 @@
+#define _DEFAULT_SOURCE
 #include "methods.c"
 
 struct data_user usr;
@@ -67,6 +68,7 @@ get_id( int argc, char ** argv, CURL * curl )
 	long long id = 0;
 	usr.is_ok = 1;
 	grp.is_ok = 1;
+	int t;
 
 	if ( argc == 1 || ( argv[1][0] == '-' && argv[1][1] == 'h' ) )
 	{
@@ -79,7 +81,7 @@ get_id( int argc, char ** argv, CURL * curl )
 		grp = group( argv[1], curl );
 	}
 	else
-		for ( int t = 0; t < argc; ++t )
+		for ( t = 0; t < argc; ++t )
 		{
 			if ( argv[t][0] == '-' )
 			{
@@ -163,8 +165,9 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 	char * curpath = malloc( bufs );
 	char * alchar = malloc( bufs );
 	char * dirchar = malloc( bufs );
+	unsigned i;
 
-	for( int i = 0; i < arr_size; ++i )
+	for( i = 0; i < arr_size; ++i )
 	{
 		if ( albums[i].size > 0 )
 		{
@@ -205,7 +208,7 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 				json_t * rsp;
 				rsp = json_object_get( json, "response" );
 				if ( !rsp )
-					fprintf( stderr, "Album error\n" );
+					fprintf( stderr, "Album error.\n" );
 
 				/* iterations in array */
 				size_t index;
@@ -262,7 +265,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 		rsp = json_object_get( json, "response" );
 		if ( !rsp )
 		{
-			fprintf( stderr, "Wall error\n" );
+			fprintf( stderr, "Wall error.\n" );
 			rsp = json_object_get( json, "error" );
 			fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 		}
@@ -273,7 +276,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 			json_t * temp_json;
 			temp_json = json_array_get( rsp, 0 );
 			posts_count = json_integer_value( temp_json );
-			printf( "Posts: %lld\n", posts_count );
+			printf( "Posts: %lld.\n", posts_count );
 		}
 
 		/* iterations in array */
@@ -335,15 +338,15 @@ get_wall( long long id, char * idpath, CURL * curl )
 							audiofile( curpath, attach_path, tmp_js, curl, posts, p_id );
 						}
 #undef ZZ
-
-//#define ZZ "video"
-//						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.video == 1 )
-//						{
-//							tmp_js = json_object_get( att_el, ZZ );
-//							vid_file( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
-//						}
-//#undef ZZ
-					}
+/*
+#define ZZ "video"
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.video == 1 )
+						{
+							tmp_js = json_object_get( att_el, ZZ );
+							vid_file( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
+						}
+#undef ZZ
+*/					}
 				}
 				fprintf( posts, "------\n\n" );
 			}
@@ -400,7 +403,7 @@ get_docs( long long id, char * idpath, CURL * curl )
 	json_t * temp_json;
 	temp_json = json_array_get( rsp, 0 );
 	long long docs_count = json_integer_value( temp_json );
-	printf("\nDocuments: %lld\n", docs_count);
+	printf("\nDocuments: %lld.\n", docs_count);
 
 	/* Loop init */
 	size_t index;
@@ -454,7 +457,7 @@ get_friends( long long id, char * idpath, CURL * curl )
 		fprintf( outptr, "%s\n", js_get_str( el, "domain" ) );
 	}
 
-	printf( "\nFriends list (of %lu) saved!\n", ( unsigned long ) index );
+	printf( "\nFriends saved: %lu.\n", ( unsigned long ) index );
 
 	free( outfl );
 	fclose( outptr );
@@ -499,7 +502,7 @@ get_groups( long long id, char * idpath, CURL * curl )
 			fprintf( outptr, "%s\n", js_get_str( el, "screen_name" ) );
 	}
 
-	printf( "Communities list (of %lu) saved!\n", ( unsigned long ) index - 1 );
+	printf( "Saved comminities: %lu.\n", ( unsigned long ) index - 1 );
 
 	free( outfl );
 	fclose( outptr );
@@ -544,7 +547,7 @@ get_music( long long id, char * idpath, CURL * curl )
 	json_array_foreach( rsp, index, el )
 	{
 		if ( index == 0 )
-			printf( "\nTracks: %lld\n", json_integer_value( el ) );
+			printf( "\nTracks: %lld.\n", json_integer_value( el ) );
 		else
 			audiofile( dirpath, trackpath, el, curl, NULL, -1 );
 	}
@@ -572,29 +575,28 @@ get_videos( long long id, char * idpath, CURL * curl )
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
-	/* finding out videos count */
-//	sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&count=0&offset=0%s", id, TOKEN );
-//	sleep(1); /* too many requests per second, must be reduced */
-//	char * r_pre;
-//	r_pre = vk_get_request( url, curl );
-
-	/* parsing json */
-//	json_t * json;
-//	json_error_t json_err;
-//	json = json_loads( r_pre, 0, &json_err );
-//	if ( !json )
-//		fprintf( stderr, "JSON scout video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
-
-	/* finding response */
-//	json_t * rsp;
-//	rsp = json_object_get( json, "response" );
-//	if (!rsp)
-//	{
-//		fprintf( stderr, "Videos scout JSON error.\n" );
-//		rsp = json_object_get( json, "error" );
-//		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
-//	}
-
+	/* finding out videos count
+	sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&count=0&offset=0%s", id, TOKEN );
+	char * r_pre;
+	r_pre = vk_get_request( url, curl );
+*/
+	/* parsing json
+	json_t * json;
+	json_error_t json_err;
+	json = json_loads( r_pre, 0, &json_err );
+	if ( !json )
+		fprintf( stderr, "JSON scout video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+*/
+	/* finding response
+	json_t * rsp;
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
+	{
+		fprintf( stderr, "Videos scout JSON error.\n" );
+		rsp = json_object_get( json, "error" );
+		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
+	}
+*/
 	long long vid_count = 0;
 
 
@@ -634,7 +636,7 @@ get_videos( long long id, char * idpath, CURL * curl )
 			if ( index == 0 && offset == 0 )
 			{
 				vid_count = json_integer_value( json_array_get( rsp, 0 ) );
-				printf( "\nVideos: %lld\n", vid_count );
+				printf( "\nVideos: %lld.\n", vid_count );
 			}
 			vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
 		}
@@ -657,7 +659,7 @@ main( int argc, char ** argv )
 	curl = curl_easy_init();
 	if ( !curl )
 	{
-		fprintf( stderr, "curl initialisation error\n" );
+		fprintf( stderr, "Curl initialisation error.\n" );
 		return 3;
 	}
 
@@ -719,16 +721,18 @@ main( int argc, char ** argv )
 	if ( types.docmt == 1 )
 		get_docs( id, user_dir, curl );
 
-	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "sleep error" );
+
+	int slpr;
+	if ( ( slpr = usleep( ( unsigned int ) USLEEP_INT ) ) != 0 ) puts( "Sleep error." );
 
 	if ( id > 0 )
 	{
 		get_friends( id, user_dir, curl );
-		if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "sleep error" );
+		if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "Sleep error." );
 		get_groups( id, user_dir, curl );
 	}
 
-	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "sleep error" );
+	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 ) puts( "Sleep error." );
 
 	if ( types.audio == 1 )
 		get_music( id, user_dir, curl );
