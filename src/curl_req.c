@@ -1,5 +1,4 @@
 #include "../config.h"
-#include <unistd.h>
 #include <curl/curl.h>
 #include <errno.h>
 #include <stdio.h>
@@ -7,12 +6,28 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <math.h>
+#include <sys/ioctl.h>
+
+#define KIBI 1024
+#define DEFAULT_TERM_COL 80
 
 struct crl_st
 {
 	char * payload;
 	size_t size;
 };
+
+unsigned
+get_width( void )
+{
+    unsigned width = DEFAULT_TERM_COL;
+    struct winsize ws;
+    if ( ioctl( 1, TIOCGWINSZ, &ws ) == 0 )
+        width = ws.ws_col;
+    return width;
+}
 
 size_t
 crl_callback( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
@@ -53,10 +68,10 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	curl_easy_setopt( hc, CURLOPT_WRITEFUNCTION, crl_callback );
 	curl_easy_setopt( hc, CURLOPT_WRITEDATA, ( void * ) fetch_str );
 	curl_easy_setopt( hc, CURLOPT_USERAGENT, "libcurl-agent/1.0" );
-/*	curl_easy_setopt( hc, CURLOPT_TIMEOUT, 5 );
-	curl_easy_setopt( hc, CURLOPT_FOLLOWLOCATION, 1 );
-	curl_easy_setopt( hc, CURLOPT_MAXREDIRS, 1 );
-*/	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
+	/*	curl_easy_setopt( hc, CURLOPT_TIMEOUT, 5 );
+		curl_easy_setopt( hc, CURLOPT_FOLLOWLOCATION, 1 );
+		curl_easy_setopt( hc, CURLOPT_MAXREDIRS, 1 );	*/
+	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
 	code = curl_easy_perform( hc );
 	return code;
 }
@@ -64,8 +79,7 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 size_t
 write_file( void * ptr, size_t size, size_t nmemb, FILE * stream )
 {
-	size_t written;
-	written = fwrite( ptr, size, nmemb, stream );
+	size_t written = fwrite( ptr, size, nmemb, stream );
 	return written;
 }
 
@@ -97,11 +111,24 @@ vk_get_request( const char * url, CURL * hc )
 	return cf->payload;
 }
 
+int
+progress_func(void * ptr, double todl_total, double dl_ed, double undef_a, double undef_b)
+{
+	(void) undef_a;
+	(void) undef_b;
+	(void) ptr;
+
+	printf("    %.1fKiB / %.1fKiB\r\b", dl_ed/KIBI, todl_total/KIBI);
+	fflush( stdout );
+	return 0;
+}
+
 size_t
 vk_get_file( const char * url, const char * filepath, CURL * curl )
 {
 	if ( curl )
 	{
+		unsigned term_width = get_width();
 		/* skip downloading if file exists */
 		errno = 0;
 		struct stat fst;
@@ -117,7 +144,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 
 			if ( file_size > 0 )
 			{
-				puts( "\tSKIP" );
+				printf( "\r\b%-*s\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n", term_width, filepath );
 				return 0;
 			}
 		}
@@ -131,6 +158,8 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_setopt( curl, CURLOPT_VERBOSE, CRL_VERBOSITY );
 			curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
 			curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 2 );
+			curl_easy_setopt( curl, CURLOPT_NOPROGRESS, 0 );
+			curl_easy_setopt( curl, CURLOPT_PROGRESSFUNCTION, progress_func );
 			CURLcode code;
 			code = curl_easy_perform( curl );
 
@@ -141,7 +170,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			}
 			curl_easy_reset( curl );
 			fclose( fw );
-			puts( "\tOK" );
+			printf( "\r\b%-*s\b\b\b\b\b\033[01;32m[OK]\033[00m\n", term_width, filepath );
 		}
 	}
 

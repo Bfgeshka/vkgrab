@@ -193,7 +193,6 @@ photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * l
 	else
 		sprintf( filepath, "%s/%lld.jpg", dirpath, pid );
 
-	printf( "%s ", filepath );
 	vk_get_file( json_string_value( biggest ), filepath, curl );
 }
 
@@ -211,8 +210,6 @@ document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * 
 	else
 		sprintf( filepath, "%s/%lld.%s", dirpath, did, js_get_str( doc_el, "ext" ) );
 
-
-	printf( "%s ", filepath );
 	vk_get_file( js_get_str( doc_el, "url" ), filepath, curl );
 }
 
@@ -246,7 +243,6 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 	free( tr_tit );
 	free( dirty );
 
-	printf( "%s ", filepath );
 	vk_get_file( js_get_str( aud_el, "url" ), filepath, curl );
 }
 
