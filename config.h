@@ -50,6 +50,6 @@ char TOKEN[bufs] = TOKEN_HEAD;
 
 /* Defines which file types would be downloaded; 0 means skip, 1 means download */
 #define DOGET_AUD 0
-#define DOGET_VID 0
+#define DOGET_VID 1
 #define DOGET_DOC 1
 #define DOGET_PIC 1

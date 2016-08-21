@@ -251,6 +251,9 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 {
 	long long vid;
 	const char * fileurl;
+
+//	json_dumpf( vid_el, stdout, JSON_INDENT(1) );
+
 	vid = js_get_int( vid_el, "vid" );
 
 	if ( p_id > 0 )
@@ -261,51 +264,63 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 	json_t * v_block;
 	v_block = json_object_get( vid_el, "files" );
 
-	json_t * v_link;
-	v_link = json_object_get( v_block, "external" );
-	if ( v_link )
+	if ( v_block )
 	{
-		fileurl = json_string_value( v_link );
-		if ( p_id > 0 )
-			fprintf( log, "ATTACH: VIDEO EXTERNAL LINK: %s\n", fileurl );
-		else
-			fprintf( log, " %s", fileurl );
-	}
-	else
-	{
-		v_link = json_object_get( v_block, "mp4_1080" );
+		json_t * v_link;
+		v_link = json_object_get( v_block, "external" );
 		if ( v_link )
+		{
 			fileurl = json_string_value( v_link );
+			if ( p_id > 0 )
+				fprintf( log, "ATTACH: VIDEO EXTERNAL LINK: %s\n", fileurl );
+			else
+				fprintf( log, " %s", fileurl );
+		}
 		else
 		{
-			v_link = json_object_get( v_block, "mp4_720" );
-			if ( v_link )
-				fileurl = json_string_value( v_link );
-			else
+			v_link = json_object_get( v_block, "mp4_1080" );
+			if ( !v_link )
 			{
-				v_link = json_object_get( v_block, "mp4_480" );
-				if ( v_link )
-					fileurl = json_string_value( v_link );
-				else
+				v_link = json_object_get( v_block, "mp4_720" );
+				if ( !v_link )
 				{
-					v_link = json_object_get( v_block, "mp4_360" );
-					if ( v_link )
-						fileurl = json_string_value( v_link );
-					else
+					v_link = json_object_get( v_block, "mp4_480" );
+					if ( !v_link )
 					{
-						v_link = json_object_get( v_block, "mp4_240" );
-						if ( v_link )
-							fileurl = json_string_value( v_link );
-						else printf(" No valid link!\n");
+						v_link = json_object_get( v_block, "mp4_360" );
+						if ( !v_link )
+						{
+							v_link = json_object_get( v_block, "mp4_240" );
+							if ( !v_link )
+							{
+								v_link = json_object_get( v_block, "mp4_144" );
+							}
+//							fprintf(stderr, "No valid link!\n");
+						}
 					}
 				}
 			}
-			if ( p_id > 0 )
-				sprintf( filepath, "%s/%lld_%lld.mp4", dirpath, p_id, vid );
-			else
-				sprintf( filepath, "%s/%lld.mp4", dirpath, vid );
+
+			if ( v_link )
+			{
+				if ( p_id > 0 )
+					sprintf( filepath, "%s/%lld_%lld.mp4", dirpath, p_id, vid );
+				else
+					sprintf( filepath, "%s/%lld.mp4", dirpath, vid );
+
+				vk_get_file( json_string_value( v_link ), filepath, curl );
+			}
 		}
-		vk_get_file( fileurl, filepath, curl );
+	}
+	else
+	{
+		v_block = json_object_get( vid_el, "player" );
+		fileurl = json_string_value( v_block );
+		if ( v_block )
+		{
+			if ( p_id < 0 )
+				fprintf( log, " %s", fileurl );
+		}
 	}
 }
 

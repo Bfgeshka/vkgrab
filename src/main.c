@@ -338,15 +338,15 @@ get_wall( long long id, char * idpath, CURL * curl )
 							audiofile( curpath, attach_path, tmp_js, curl, posts, p_id );
 						}
 #undef ZZ
-						/*
-						#define ZZ "video"
-												if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.video == 1 )
-												{
-													tmp_js = json_object_get( att_el, ZZ );
-													vid_file( curpath, attach_path, fileurl, tmp_js, curl, posts, p_id );
-												}
-						#undef ZZ
-						*/
+
+#define ZZ "video"
+						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.video == 1 )
+						{
+							tmp_js = json_object_get( att_el, ZZ );
+							vid_file( curpath, attach_path, tmp_js, curl, posts, p_id );
+						}
+#undef ZZ
+
 					}
 				}
 				fprintf( posts, "------\n\n" );
@@ -576,19 +576,19 @@ get_videos( long long id, char * idpath, CURL * curl )
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
-	/* finding out videos count
+	/* finding out videos count */
 	sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&count=0&offset=0%s", id, TOKEN );
 	char * r_pre;
 	r_pre = vk_get_request( url, curl );
-	*/
-	/* parsing json
+
+	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r_pre, 0, &json_err );
 	if ( !json )
 		fprintf( stderr, "JSON scout video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
-	*/
-	/* finding response
+
+	/* finding response */
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
@@ -597,7 +597,7 @@ get_videos( long long id, char * idpath, CURL * curl )
 		rsp = json_object_get( json, "error" );
 		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
 	}
-	*/
+
 	long long vid_count = 0;
 
 
@@ -639,7 +639,8 @@ get_videos( long long id, char * idpath, CURL * curl )
 				vid_count = json_integer_value( json_array_get( rsp, 0 ) );
 				printf( "\nVideos: %lld.\n", vid_count );
 			}
-			vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
+			else
+				vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
 		}
 
 		times = vid_count / LIMIT_V;
