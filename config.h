@@ -15,6 +15,10 @@
 #define TOKEN_HEAD "&access_token="
 char TOKEN[bufs] = TOKEN_HEAD;
 
+/* For generation of token getting link.
+ * Create your own application, get its ID and insert it here.
+ */
+#define APPLICATION_ID 0
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L

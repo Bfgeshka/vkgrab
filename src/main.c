@@ -75,6 +75,13 @@ get_id( int argc, char ** argv, CURL * curl )
 		help_print();
 		return 0;
 	}
+
+	if ( argv[1][0] == '-' && argv[1][1] == 'T' )
+	{
+		token_link();
+		return 0;
+	}
+
 	else if ( argc == 2 )
 	{
 		usr = user( argv[1], curl );
@@ -215,7 +222,7 @@ get_albums_files( long long id, size_t arr_size, char * idpath, CURL * curl )
 				json_t * el;
 				json_array_foreach( rsp, index, el )
 				{
-					photo( dirchar, curpath, el, curl, NULL, -1 );
+					photo( dirchar, curpath, el, curl, NULL, -1, id );
 				}
 			}
 		}
@@ -310,7 +317,7 @@ get_wall( long long id, char * idpath, CURL * curl )
 						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.pictr == 1 )
 						{
 							tmp_js = json_object_get( att_el, ZZ );
-							photo( curpath, attach_path, tmp_js, curl, posts, p_id );
+							photo( curpath, attach_path, tmp_js, curl, posts, p_id, id );
 						}
 #undef ZZ
 

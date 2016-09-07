@@ -156,7 +156,7 @@ fix_filename( char * dirty )
 
 
 void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
-photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
+photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id, long long uid )
 {
 	long long pid;
 	json_t * biggest;
@@ -189,9 +189,9 @@ photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * l
 
 	/* downloading */
 	if ( p_id > 0 )
-		sprintf( filepath, "%s/%lld_%lld.jpg", dirpath, p_id, pid );
+		sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, uid, p_id, pid );
 	else
-		sprintf( filepath, "%s/%lld.jpg", dirpath, pid );
+		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, uid, pid );
 
 	vk_get_file( json_string_value( biggest ), filepath, curl );
 }
@@ -325,11 +325,21 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 }
 
 void
+token_link()
+{
+	char * permissions = "audio,video,docs,photos";
+/*	char t_url[bufs];
+*/	fprintf(stdout, "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token",
+			APPLICATION_ID, permissions);
+}
+
+void
 help_print()
 {
 	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
 	puts("");
 	puts("Options:");
+	puts("\t-T\t\tgenerate link for getting a token");
 	puts("\t-t TOKEN\t\tgive a valid token without header \"&access_token=\"");
 	puts("\t-u USER\t\t\tignoring group with same screenname");
 	puts("\t-g GROUP\t\tignoring user with same screenname");
