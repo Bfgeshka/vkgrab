@@ -696,13 +696,13 @@ main( int argc, char ** argv )
 	char name_descript[bufs];
 	if ( usr.is_ok == 0 )
 	{
-		sprintf( user_dir, "%s(%lld)", usr.screenname, usr.uid );
-		sprintf( name_descript, "%s_%s",  usr.fname, usr.lname );
+		sprintf( user_dir, "u_%lld", usr.uid );
+		sprintf( name_descript, "%s: %s %s", usr.screenname, usr.fname, usr.lname );
 	}
 	else if ( grp.is_ok == 0 )
 	{
-		sprintf( user_dir, "%s(%lld)", grp.screenname, grp.gid );
-		sprintf( name_descript, "%s",  grp.name );
+		sprintf( user_dir, "c_%lld", grp.gid );
+		sprintf( name_descript, "%s: %s", grp.screenname, grp.name );
 	}
 	else
 	{

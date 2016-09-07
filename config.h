@@ -1,26 +1,33 @@
-/* Size for usual string */
-#define bufs 512
-#define a_field 32
+/*
+ * For generation of token getting link.
+ * Create your own application, get its ID and insert it here.
+ *
+ * For creating your application visit https://vk.com/editapp?act=create.
+ * Choose "standalone application" and give it a name you like.
+ *
+ * After if go to "My apps": https://vk.com/apps?act=manage
+ * Go to 'manage' on the right side.
+ *
+ * Choose 'settings', and there you can see your application id.
+ * Copy it and replace value of APPLICATION_ID.
+ */
+#define APPLICATION_ID 0
+
 
 /*
+ * Better use vkgrab -T for getting temporary token! Read above.
+ *
  * How to get access token:
  * https://new.vk.com/dev/auth_mobile
- *
  * recommended permissions: audio,video,docs,photos
  *
  * Example:
  * char TOKEN[bufs] "&access_token=blahblahblah"
- *
- * Better use vkgrab -T for getting temporary token.
  */
-
 #define permissions "audio,video,docs,photos"
 #define TOKEN_HEAD "&access_token="
 char TOKEN[bufs] = TOKEN_HEAD;
 
-/* For generation of token getting link.
- * Create your own application, get its ID and insert it here. */
-#define APPLICATION_ID 0
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -60,3 +67,7 @@ char TOKEN[bufs] = TOKEN_HEAD;
 #define DOGET_VID 1
 #define DOGET_DOC 1
 #define DOGET_PIC 1
+
+/* Size for usual string */
+#define bufs 512
+#define a_field 32
