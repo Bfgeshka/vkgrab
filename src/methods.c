@@ -328,8 +328,7 @@ void
 token_link()
 {
 	char * permissions = "audio,video,docs,photos";
-/*	char t_url[bufs];
-*/	fprintf(stdout, "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token",
+	fprintf(stdout, "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
 			APPLICATION_ID, permissions);
 }
 
@@ -339,7 +338,7 @@ help_print()
 	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
 	puts("");
 	puts("Options:");
-	puts("\t-T\t\tgenerate link for getting a token");
+	puts("\t-T\t\t\tgenerate link for getting a token");
 	puts("\t-t TOKEN\t\tgive a valid token without header \"&access_token=\"");
 	puts("\t-u USER\t\t\tignoring group with same screenname");
 	puts("\t-g GROUP\t\tignoring user with same screenname");
