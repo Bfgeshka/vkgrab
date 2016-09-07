@@ -27,7 +27,7 @@ vkgrab -g GROUP
 
 ## windows
 1. For windows at first you should [download cygwin](https://cygwin.com/install.html).
-2. Choose any repository mirror and continue to chgoosing packages. Be sure you've chosen **libcurl, libcurl-devel, wget, cygwin32-gcc-core, gcc-core, git, make**. Let cygwin installer download it's dependencies aswell.
+2. Choose any repository mirror and continue to choosing packages. Be sure you've chosen **libcurl4, libcurl-devel, wget, cygwin32-gcc-core, gcc-core, git, make**. Let cygwin installer download it's dependencies aswell.
 3. Launch cygwin console via desktop link or any other way.
 4. Install jansson. Jansson is not presented in cygwin repositories, so you'll have to compile it by yourself. Just copy/paste this sequence:
   ```
