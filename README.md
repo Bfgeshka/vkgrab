@@ -46,10 +46,14 @@ vkgrab -g GROUP
   cd ./vkgrab
   ```
 
-6. There you should configure vkgrab for youself, i.e. edit config.h: ```nano ./config.h```.
-  make && make install
+6. There you should configure vkgrab for youself, i.e. edit config.h: ```nano ./config.h```. After finishing, press Ctrl+X and 'y' (for saving changes).
 
-6. If compilation was successfull, you've installed vkgrab! Type ```vkgrab -h``` for getting started.
+7. Compile now:
+```
+  make && make install
+```
+
+8. If compilation was successfull, you've installed vkgrab! Type ```vkgrab -h``` for getting started.
 
 ## building
 - edit config.h first!
