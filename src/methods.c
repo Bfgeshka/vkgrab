@@ -335,14 +335,14 @@ token_link()
 void
 help_print()
 {
-	puts("Usage:\tvkgrab [OPTIONS] <USER|GROUP>");
+	puts("Usage: vkgrab [OPTIONS] <USER|GROUP>");
 	puts("");
 	puts("Options:");
-	puts("\t-T\t\t\tgenerate link for getting a token");
-	puts("\t-t TOKEN\t\tgive a valid token without header \"&access_token=\"");
-	puts("\t-u USER\t\t\tignoring group with same screenname");
-	puts("\t-g GROUP\t\tignoring user with same screenname");
-	puts("\t-ya, -yv, -yd, -yp\tallows downloading of audio, video, documents or pictures");
-	puts("\t-na, -nv, -nd, -np\tforbids downloading of audio, video, documents or pictures");
-	puts("If both USER and GROUP do exist, group id proceeds");
+	puts("  -T                   generate link for getting a token");
+	puts("  -t TOKEN             give a valid token without header \"&access_token=\"");
+	puts("  -u USER              ignore group with same screenname");
+	puts("  -g GROUP             ignore user with same screenname");
+	puts("  -ya, -yv, -yd, -yp   allows downloading of audio, video, documents or pictures");
+	puts("  -na, -nv, -nd, -np   forbids downloading of audio, video, documents or pictures\n");
+	puts("Notice: if both USER and GROUP do exist, group id proceeds");
 }

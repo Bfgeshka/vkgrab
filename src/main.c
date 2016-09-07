@@ -730,7 +730,6 @@ main( int argc, char ** argv )
 	if ( types.docmt == 1 )
 		get_docs( id, user_dir, curl );
 
-
 	int slpr;
 	if ( ( slpr = usleep( ( unsigned int ) USLEEP_INT ) ) != 0 ) puts( "Sleep error." );
 
