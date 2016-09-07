@@ -14,19 +14,6 @@
 #define APPLICATION_ID 0
 
 
-/*
- * Better use vkgrab -T for getting temporary token! Read above.
- *
- * How to get access token:
- * https://new.vk.com/dev/auth_mobile
- * recommended permissions: audio,video,docs,photos
- *
- * Example:
- * char TOKEN[bufs] "&access_token=blahblahblah"
- */
-#define permissions "audio,video,docs,photos"
-#define TOKEN_HEAD "&access_token="
-char TOKEN[bufs] = TOKEN_HEAD;
 
 
 /* 1L - verbose curl connection, 0L - silent */
@@ -71,3 +58,17 @@ char TOKEN[bufs] = TOKEN_HEAD;
 /* Size for usual string */
 #define bufs 512
 #define a_field 32
+
+/*
+ * Better use vkgrab -T for getting temporary token! Read above.
+ *
+ * How to get access token:
+ * https://new.vk.com/dev/auth_mobile
+ * recommended permissions: audio,video,docs,photos
+ *
+ * Example:
+ * char TOKEN[bufs] "&access_token=blahblahblah"
+ */
+#define permissions "audio,video,docs,photos"
+#define TOKEN_HEAD "&access_token="
+char TOKEN[bufs] = TOKEN_HEAD;
