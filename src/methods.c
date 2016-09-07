@@ -86,7 +86,6 @@ user( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 
-
 	/* filling struct */
 	usr.uid = js_get_int( el, "uid" );
 	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs/2 );
@@ -131,7 +130,6 @@ group( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 
-
 	/* filling struct */
 	grp.gid = js_get_int( el, "gid" );
 	grp.is_closed = js_get_int( el, "is_closed" );
@@ -153,7 +151,6 @@ fix_filename( char * dirty )
 			dirty[i] = '_';
 	}
 }
-
 
 void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
 photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id, long long uid )
@@ -179,9 +176,7 @@ photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * l
 				{
 					biggest = json_object_get( photo_el, "src" );
 					if ( !biggest )
-					{
 						biggest = json_object_get( photo_el, "src_small" );
-					}
 				}
 			}
 		}
@@ -252,8 +247,6 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 	long long vid;
 	const char * fileurl;
 
-//	json_dumpf( vid_el, stdout, JSON_INDENT(1) );
-
 	vid = js_get_int( vid_el, "vid" );
 
 	if ( p_id > 0 )
@@ -292,10 +285,7 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 						{
 							v_link = json_object_get( v_block, "mp4_240" );
 							if ( !v_link )
-							{
 								v_link = json_object_get( v_block, "mp4_144" );
-							}
-//							fprintf(stderr, "No valid link!\n");
 						}
 					}
 				}
@@ -323,15 +313,7 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 		}
 	}
 }
-/*
-void
-token_link()
-{
-	char * permissions = "audio,video,docs,photos";
-fprintf(stdout, "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
-			APPLICATION_ID, permissions);
-}
-*/
+
 void
 help_print()
 {

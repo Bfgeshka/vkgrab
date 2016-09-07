@@ -617,7 +617,6 @@ get_videos( long long id, char * idpath, CURL * curl )
 
 	long long vid_count = 0;
 
-
 	/* Loop init */
 	int offset = 0;
 	int times = 0;
