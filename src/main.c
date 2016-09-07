@@ -70,22 +70,32 @@ get_id( int argc, char ** argv, CURL * curl )
 	grp.is_ok = 1;
 	int t;
 
-	if ( argc == 1 || ( argv[1][0] == '-' && argv[1][1] == 'h' ) )
+	if ( argc == 1 )
 	{
 		help_print();
 		return 0;
 	}
 
-	if ( argv[1][0] == '-' && argv[1][1] == 'T' )
-	{
-		token_link();
-		return 0;
-	}
-
 	else if ( argc == 2 )
 	{
-		usr = user( argv[1], curl );
-		grp = group( argv[1], curl );
+		if ( argv[1][0] == '-' )
+		{
+			if ( argv[1][1] == 'h' )
+				help_print();
+
+			else
+			if ( argv[1][1] == 'T' )
+				fprintf(stdout,
+						"https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
+						APPLICATION_ID, permissions);
+
+			return 0;
+		}
+		else
+		{
+			usr = user( argv[1], curl );
+			grp = group( argv[1], curl );
+		}
 	}
 	else
 		for ( t = 0; t < argc; ++t )

@@ -14,6 +14,7 @@
  * Better use vkgrab -T for getting temporary token.
  */
 
+#define permissions "audio,video,docs,photos"
 #define TOKEN_HEAD "&access_token="
 char TOKEN[bufs] = TOKEN_HEAD;
 

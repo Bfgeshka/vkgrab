@@ -323,15 +323,15 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 		}
 	}
 }
-
+/*
 void
 token_link()
 {
 	char * permissions = "audio,video,docs,photos";
-	fprintf(stdout, "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
+fprintf(stdout, "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
 			APPLICATION_ID, permissions);
 }
-
+*/
 void
 help_print()
 {
