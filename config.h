@@ -45,17 +45,19 @@
 
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
  * This timer slows program down before making a request. It wouldn't be applied to file downloading.
- * Default value is 100000, which means 0.1s. */
+ * Default value is 100000, which means 0.1s.
+ *
+ * I had no other choice, don't be harsh. */
 #define USLEEP_INT 100000
 
-/* Defines which file types would be downloaded; 0 means skip, 1 means download
- * These are default values, can be overriden. Read vkgrab -h for more info */
+/* Defines which file types would be downloaded; 0 means skip, 1 means download.
+ * These are default values, can be overriden. Read vkgrab -h for more info. */
 #define DOGET_AUD 0
 #define DOGET_VID 1
 #define DOGET_DOC 1
 #define DOGET_PIC 1
 
-/* Size for usual string */
+/* Size for usual string. */
 #define bufs 512
 #define a_field 32
 

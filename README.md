@@ -2,6 +2,7 @@
 Grab everything you can from vk.com pages! Works with VK API via libcurl &amp; jansson
 
 ## usage
+Anonymous access rights:
 ```
 vkgrab <USER|GROUP>
 OR
@@ -9,6 +10,11 @@ vkgrab -u USER
 OR
 vkgrab -g GROUP
 ```
+
+Use with your profile rights:
+* ```vkgrab -T``` *get token by link*
+* ```vkgrab -t TOKEN <USER|GROUP>```
+
 
 ## features
 * albums downloading
@@ -27,9 +33,9 @@ vkgrab -g GROUP
 
 ## windows
 1. For windows at first you should [download cygwin](https://cygwin.com/install.html).
-2. Choose any repository mirror and continue to choosing packages. Be sure you've chosen **libcurl4, libcurl-devel, wget, cygwin32-gcc-core, gcc-core, git, make, nano**. Let cygwin installer download it's dependencies aswell.
+2. Pick any repository mirror and continue to packages. Be sure you've chosen **libcurl4, libcurl-devel, wget, cygwin32-gcc-core, gcc-core, git, make, nano**. Let cygwin installer download it's dependencies aswell.
 3. Launch cygwin console via desktop link or any other way.
-4. Install jansson. Jansson is not presented in cygwin repositories, so you'll have to compile it by yourself. Just copy/paste this sequence:
+4. Install jansson. Jansson is not presented in cygwin repositories, so you have to compile it by yourself. Just copy/paste this sequence (use shift+insert in terminal):
   ```
   wget http://www.digip.org/jansson/releases/jansson-2.7.tar.gz
 
