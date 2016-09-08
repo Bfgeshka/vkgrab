@@ -3,13 +3,11 @@ Grab everything you can from vk.com pages! Works with VK API via libcurl &amp; j
 
 ## usage
 Anonymous access rights:
-```
-vkgrab <USER|GROUP>
+```vkgrab <USER|GROUP>```
 OR
-vkgrab -u USER
+```vkgrab -u USER```
 OR
-vkgrab -g GROUP
-```
+```vkgrab -g GROUP```
 
 Use with your profile rights:
 * ```vkgrab -T``` *get token by link*
@@ -55,7 +53,7 @@ Use with your profile rights:
 7. Compile now: ```make && make install```
 8. If compilation was successfull, you've installed vkgrab! Type ```vkgrab -h``` for getting started.
 
-## building
+## building in unix-like os
 - edit config.h first!
 - ```$ make```
 - ```# make install```
