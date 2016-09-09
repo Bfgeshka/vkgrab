@@ -10,11 +10,21 @@ long long photos_count = 0;
 size_t
 get_albums( long long id, CURL * curl )
 {
-	/* getting albums */
+
 	char * url = malloc( bufs );
-	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s", id, TOKEN );
+	char * addit_request = malloc( bufs );
+
+	/* Wall album is hidden for groups */
+	if ( id < 0 )
+		sprintf( addit_request, "&album_ids=-7" );
+	else
+		addit_request[0] = '\0';
+
+	/* getting response */
+	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s&v=5.53%s", id, TOKEN, addit_request );
 	char * r = vk_get_request( url, curl );
 	free( url );
+	free( addit_request );
 
 	/* parsing json */
 	json_t * json;
@@ -37,18 +47,22 @@ get_albums( long long id, CURL * curl )
 		return 0;
 	}
 
-	/* getting albums metadata */
-	size_t arr_size = json_array_size( rsp );
+	/* Getting number of albums */
+	long long counter = js_get_int( rsp, "count" );
 
-	if ( arr_size > 0 )
+	/* getting albums metadata */
+	if ( counter > 0 )
 	{
+		json_t * al_items;
+		al_items = json_object_get( rsp, "items" );
+		albums = malloc( counter * sizeof( struct data_album ) );
+		printf( "\nAlbums: %lld.\n", counter );
+
 		json_t * el;
 		size_t index;
-		printf( "\nAlbums: %lu.\n", ( unsigned long ) arr_size );
-		albums = malloc( arr_size * sizeof( struct data_album ) );
-		json_array_foreach( rsp, index, el )
+		json_array_foreach( al_items, index, el )
 		{
-			albums[index].aid = js_get_int( el, "aid" );
+			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
 			strncpy( albums[index].title, js_get_str( el, "title" ), bufs );
 			printf( "Album: %s (id:%lld, #:%lld).\n",
@@ -59,7 +73,7 @@ get_albums( long long id, CURL * curl )
 	else
 		puts( "No albums found." );
 
-	return arr_size;
+	return counter;
 }
 
 long long
@@ -83,11 +97,10 @@ get_id( int argc, char ** argv, CURL * curl )
 			if ( argv[1][1] == 'h' )
 				help_print();
 
-			else
-			if ( argv[1][1] == 'T' )
+			else if ( argv[1][1] == 'T' )
 				fprintf(stdout,
-						"https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
-						APPLICATION_ID, permissions);
+				        "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
+				        APPLICATION_ID, permissions);
 
 			return 0;
 		}
