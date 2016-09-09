@@ -10,7 +10,6 @@ long long photos_count = 0;
 size_t
 get_albums( long long id, CURL * curl )
 {
-
 	char * url = malloc( bufs );
 	char * addit_request = malloc( bufs );
 
@@ -691,7 +690,7 @@ main( int argc, char ** argv )
 	if ( !curl )
 	{
 		fprintf( stderr, "Curl initialisation error.\n" );
-		return 3;
+		return 1;
 	}
 
 	/* Define downloaded datatypes */
@@ -720,7 +719,7 @@ main( int argc, char ** argv )
 	else
 	{
 		fprintf( stderr, "Screenname is invalid.\n");
-		return 1;
+		return 3;
 	}
 
 	/* Creating dir for current id */
