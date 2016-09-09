@@ -60,7 +60,7 @@ user( char * name, CURL * curl )
 
 	char * url = NULL;
 	url = malloc( bufs );
-	sprintf(url, "https://api.vk.com/method/users.get?user_ids=%s", name);
+	sprintf(url, "https://api.vk.com/method/users.get?user_ids=%s&v=5.53", name);
 	char * r = vk_get_request(url, curl);
 	free(url);
 
@@ -87,7 +87,7 @@ user( char * name, CURL * curl )
 	el = json_array_get( rsp, 0 );
 
 	/* filling struct */
-	usr.uid = js_get_int( el, "uid" );
+	usr.uid = js_get_int( el, "id" );
 	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs/2 );
 	strncpy( usr.lname, js_get_str( el, "last_name" ), bufs/2 );
 
@@ -103,7 +103,7 @@ group( char * name, CURL * curl )
 
 	char * url = NULL;
 	url = malloc( bufs );
-	strcpy( url, "https://api.vk.com/method/groups.getById?group_id=" );
+	strcpy( url, "https://api.vk.com/method/groups.getById?v=5.53&group_id=" );
 	strcat( url, name );
 	char * r = vk_get_request(url, curl);
 	free(url);
@@ -131,7 +131,7 @@ group( char * name, CURL * curl )
 	el = json_array_get( rsp, 0 );
 
 	/* filling struct */
-	grp.gid = js_get_int( el, "gid" );
+	grp.gid = js_get_int( el, "id" );
 	grp.is_closed = js_get_int( el, "is_closed" );
 	strncpy( grp.name, js_get_str( el, "name" ), bufs/2 );
 	strncpy( grp.type, js_get_str( el, "type" ), bufs/4 );
