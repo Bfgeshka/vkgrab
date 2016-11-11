@@ -1,26 +1,20 @@
 #include "curl_req.c"
 #include <jansson.h>
 
-struct data_user
+struct data_account
 {
-	long long uid;
-	/* 0 means ok */
-	short is_ok;
-	char fname[bufs/2];
-	char lname[bufs/2];
+	long long id;
 	char screenname[bufs/2];
-};
+	char usr_fname[bufs/2];
+	char usr_lname[bufs/2];
+	char grp_name[bufs/2];
+	char grp_type[bufs/4];
 
-struct data_group
-{
-	long long gid;
-	long long is_closed;
-	/* 0 means ok */
-	short is_ok;
-	char screenname[bufs/2];
-	char name[bufs/2];
-	char type[bufs/4];
+	/* 0 means ok: */
+	short grp_ok;
+	short usr_ok;
 };
+struct data_account acc;
 
 struct data_album
 {
@@ -51,16 +45,16 @@ js_get_str( json_t * src, char * key )
 	return json_string_value( elem );
 }
 
-struct data_user
+short
 user( char * name, CURL * curl )
 {
-	struct data_user usr;
-	strncpy( usr.screenname, name, bufs/2 );
-	usr.is_ok = 0;
+/*	struct data_account accz;
+*/	strncpy( acc.screenname, name, bufs/2 );
+	acc.usr_ok = 0;
 
 	char * url = NULL;
 	url = malloc( bufs );
-	sprintf(url, "https://api.vk.com/method/users.get?user_ids=%s&v=5.53", name);
+	sprintf( url, "https://api.vk.com/method/users.get?user_ids=%s&v=%s", name, api_ver );
 	char * r = vk_get_request(url, curl);
 	free(url);
 
@@ -70,8 +64,8 @@ user( char * name, CURL * curl )
 	if ( !json )
 	{
 		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
-		usr.is_ok = -1;
-		return usr;
+		acc.usr_ok = -1;
+		return acc.usr_ok;
 	}
 
 	/* simplifying json */
@@ -79,33 +73,32 @@ user( char * name, CURL * curl )
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "No such user (%s).\n", usr.screenname );
-		usr.is_ok = -2;
-		return usr;
+		fprintf( stderr, "No such user (%s).\n", acc.screenname );
+		acc.usr_ok = -2;
+		return acc.usr_ok;
 	}
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 
 	/* filling struct */
-	usr.uid = js_get_int( el, "id" );
-	strncpy( usr.fname, js_get_str( el, "first_name" ), bufs/2 );
-	strncpy( usr.lname, js_get_str( el, "last_name" ), bufs/2 );
+	acc.id = js_get_int( el, "id" );
+	strncpy( acc.usr_fname, js_get_str( el, "first_name" ), bufs/2 );
+	strncpy( acc.usr_lname, js_get_str( el, "last_name" ), bufs/2 );
 
-	return usr;
+	return acc.usr_ok;
 }
 
-struct data_group
+short
 group( char * name, CURL * curl )
 {
-	struct data_group grp;
-	grp.is_ok = 0;
-	strcpy( grp.screenname, name );
+/*	struct data_account acc;
+*/	acc.grp_ok = 0;
+	strcpy( acc.screenname, name );
 
 	char * url = NULL;
 	url = malloc( bufs );
-	strcpy( url, "https://api.vk.com/method/groups.getById?v=5.53&group_id=" );
-	strcat( url, name );
-	char * r = vk_get_request(url, curl);
+	sprintf( url, "https://api.vk.com/method/groups.getById?v=%s&group_id=%s", api_ver, name );
+	char * r = vk_get_request( url, curl );
 	free(url);
 
 	json_t * json;
@@ -114,8 +107,8 @@ group( char * name, CURL * curl )
 	if ( !json )
 	{
 		fprintf( stderr, "JSON groups.getById parsing error.\n%d:%s\n", json_err.line, json_err.text );
-		grp.is_ok = -1;
-		return grp;
+		acc.grp_ok = -1;
+		return acc.grp_ok;
 	}
 
 	/* simplifying json */
@@ -123,21 +116,19 @@ group( char * name, CURL * curl )
 	rsp = json_object_get( json, "response" );
 	if (!rsp)
 	{
-		fprintf( stderr, "No such group (%s).\n", grp.screenname );
-		grp.is_ok = -2;
-		return grp;
+		fprintf( stderr, "No such group (%s).\n", acc.screenname );
+		acc.grp_ok = -2;
+		return acc.grp_ok;
 	}
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 
 	/* filling struct */
-	grp.gid = js_get_int( el, "id" );
-	grp.is_closed = js_get_int( el, "is_closed" );
-	strncpy( grp.name, js_get_str( el, "name" ), bufs/2 );
-	strncpy( grp.type, js_get_str( el, "type" ), bufs/4 );
-	strncpy( grp.screenname, name, bufs/2 );
+	acc.id = - js_get_int( el, "id" );
+	strncpy( acc.grp_name, js_get_str( el, "name" ), bufs/2 );
+	strncpy( acc.grp_type, js_get_str( el, "type" ), bufs/4 );
 
-	return grp;
+	return acc.grp_ok;
 }
 
 void
@@ -147,36 +138,36 @@ fix_filename( char * dirty )
 	unsigned i;
 	for ( i = 0; i < name_length; ++i )
 	{
-		if ( dirty[i] == '/' || dirty[i] == ':' || dirty[i] == '\\' )
+		if ( dirty[i] == '/' || dirty[i] == '\\' )
 			dirty[i] = '_';
 	}
 }
 
 void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
-photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id, long long uid )
+photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long pid;
 	json_t * biggest;
 
-	pid = js_get_int( photo_el, "pid" );
+	pid = js_get_int( photo_el, "id" );
 	if ( p_id > 0 )
 		fprintf( log, "ATTACH: PHOTO FOR %lld: %lld\n", p_id, pid);
 
-	biggest = json_object_get( photo_el, "src_xxxbig" );
+	biggest = json_object_get( photo_el, "photo_2560" );
 	if ( !biggest )
 	{
-		biggest = json_object_get( photo_el, "src_xxbig" );
+		biggest = json_object_get( photo_el, "photo_1280" );
 		if ( !biggest )
 		{
-			biggest = json_object_get( photo_el, "src_xbig" );
+			biggest = json_object_get( photo_el, "photo_807" );
 			if ( !biggest )
 			{
-				biggest = json_object_get( photo_el, "src_big" );
+				biggest = json_object_get( photo_el, "photo_604" );
 				if ( !biggest )
 				{
-					biggest = json_object_get( photo_el, "src" );
+					biggest = json_object_get( photo_el, "photo_130" );
 					if ( !biggest )
-						biggest = json_object_get( photo_el, "src_small" );
+						biggest = json_object_get( photo_el, "photo_75" );
 				}
 			}
 		}
@@ -184,9 +175,9 @@ photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * l
 
 	/* downloading */
 	if ( p_id > 0 )
-		sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, uid, p_id, pid );
+		sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, acc.id, p_id, pid );
 	else
-		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, uid, pid );
+		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, acc.id, pid );
 
 	vk_get_file( json_string_value( biggest ), filepath, curl );
 }
@@ -195,15 +186,15 @@ void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
 document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long did;
-	did = js_get_int( doc_el, "did" );
+	did = js_get_int( doc_el, "id" );
 
 	if ( p_id > 0 )
 	{
 		fprintf( log, "ATTACH: DOCUMENT FOR %lld: %lld (\"%s\")\n", p_id, did, js_get_str( doc_el, "title" ));
-		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, p_id, did, js_get_str( doc_el, "ext" ) );
+		sprintf( filepath, "%s/%lld_%lld_%lld.%s", dirpath, acc.id, p_id, did, js_get_str( doc_el, "ext" ) );
 	}
 	else
-		sprintf( filepath, "%s/%lld.%s", dirpath, did, js_get_str( doc_el, "ext" ) );
+		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, acc.id, did, js_get_str( doc_el, "ext" ) );
 
 	vk_get_file( js_get_str( doc_el, "url" ), filepath, curl );
 }
@@ -327,4 +318,11 @@ help_print()
 	puts("  -ya, -yv, -yd, -yp   allows downloading of audio, video, documents or pictures");
 	puts("  -na, -nv, -nd, -np   forbids downloading of audio, video, documents or pictures\n");
 	puts("Notice: if both USER and GROUP do exist, group id proceeds");
+}
+
+void
+request_pause()
+{
+	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 )
+		puts( "Sleep error." );
 }

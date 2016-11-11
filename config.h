@@ -14,8 +14,6 @@
 #define APPLICATION_ID 0
 
 
-
-
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
 
@@ -45,10 +43,12 @@
 
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
  * This timer slows program down before making a request. It wouldn't be applied to file downloading.
- * Default value is 100000, which means 0.1s.
+ * Default value is 200000, which means 0.2s.
+ *
+ * Only 3 requests per second are allowed.
  *
  * I had no other choice, don't be harsh. */
-#define USLEEP_INT 100000
+#define USLEEP_INT 200000
 
 /* Defines which file types would be downloaded; 0 means skip, 1 means download.
  * These are default values, can be overriden. Read vkgrab -h for more info. */
@@ -74,3 +74,20 @@
 #define permissions "audio,video,docs,photos"
 #define TOKEN_HEAD "&access_token="
 char TOKEN[bufs] = TOKEN_HEAD;
+
+/* Currently used api version */
+#define api_ver "5.60"
+
+
+/*
+ *audio.get
+ *docs.get				560
+ *friends.get			560
+ *groups.get			560
+ *groups.getById		560
+ *photos.get			560
+ *photos.getAlbums		560
+ *users.get				560
+ *video.get
+ *wall.get				560
+ */
