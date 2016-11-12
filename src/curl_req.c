@@ -1,14 +1,16 @@
 #include "../config.h"
 #include <curl/curl.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <math.h>
-#include <sys/ioctl.h>
+
 
 #define KIBI 1024
 #define DEFAULT_TERM_COL 80
@@ -41,7 +43,7 @@ utf8_char_offset( const char * input )
 		if ( (input[i] & 0xC0) != 0x80 )
 			char_count++;
 
-	return bytelen - char_count;
+	return (bytelen - char_count)/2;
 }
 
 size_t
@@ -133,9 +135,75 @@ progress_func(void * ptr, double todl_total, double dl_ed, double undef_a, doubl
 	(void) undef_b;
 	(void) ptr;
 
-	printf("    %.1fKiB / %.1fKiB\r\b", dl_ed/KIBI, todl_total/KIBI);
+	double percentage = (dl_ed / todl_total) * 100;
+
+	putchar( ' ' );
+	putchar( '<' );
+	for ( unsigned char i = 0; i < 100; i += 5 )
+	{
+		if (percentage > i)
+			putchar( '|' );
+		else
+			putchar( ' ' );
+	}
+	printf("> [%03.2f%%] %.1f/%.1f KiB\r\b", percentage, dl_ed/KIBI, todl_total/KIBI);
 	fflush( stdout );
 	return 0;
+}
+
+int
+cp_file( const char * to, const char * from )
+{
+	int fd_to, fd_from;
+	char buf[8*bufs];
+	ssize_t nread;
+
+	fd_from = open( from, O_RDONLY );
+	if ( fd_from < 0 )
+		return -1;
+
+	fd_to = open( to, O_WRONLY | O_CREAT | O_EXCL, 0666 );
+	if ( fd_to < 0 )
+		goto cp_func_out_error;
+
+	while ( nread = read( fd_from, buf, sizeof buf ), nread > 0 )
+	{
+		char *out_ptr = buf;
+		ssize_t nwritten;
+
+		do
+		{
+			nwritten = write( fd_to, out_ptr, nread );
+
+			if ( nwritten >= 0 )
+			{
+				nread -= nwritten;
+				out_ptr += nwritten;
+			}
+			else if ( errno != EINTR )
+				goto cp_func_out_error;
+		}
+		while ( nread > 0 );
+	}
+
+	if ( nread == 0 )
+	{
+		if ( close( fd_to ) < 0 )
+		{
+			fd_to = -1;
+			goto cp_func_out_error;
+		}
+		close( fd_from );
+
+		/* Success! */
+		return 0;
+	}
+
+cp_func_out_error:
+	close( fd_from );
+	if ( fd_to >= 0 )
+		close(fd_to);
+	return -1;
 }
 
 size_t
@@ -167,14 +235,15 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 					--spaces_offset;
 					putchar( ' ' );
 				}
-				printf( "\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n"  );
+				printf( "\b\b\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n"  );
 				return 0;
 			}
 		}
 		if ( err == ENOENT || file_size == 0 )
 		{
 			fflush( stdout );
-			FILE * fw = fopen( filepath, "w" );
+			//FILE * fw = fopen( filepath, "w" );
+			FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
 			curl_easy_setopt( curl, CURLOPT_URL, url );
 			curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_file );
 			curl_easy_setopt( curl, CURLOPT_WRITEDATA, fw );
@@ -194,13 +263,16 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_reset( curl );
 			fclose( fw );
 			//printf( "\r\b%-*s\b\b\b\b\b\033[01;32m[OK]\033[00m\n", term_width, filepath );
-				printf( "\r\b%-*s", term_width, filepath );
-				while ( spaces_offset > 0 )
-				{
-					--spaces_offset;
-					putchar( ' ' );
-				}
-				printf( "\b\b\b\b\b\033[01;32m[OK]\033[00m\n"  );
+			cp_file( filepath, TMP_CURL_FILENAME );
+
+			printf( "\r\b%-*s", term_width, filepath );
+			while ( spaces_offset > 0 )
+			{
+				--spaces_offset;
+				putchar( ' ' );
+			}
+			printf( "\b\b\b\b\b\b\b\033[01;32m[OK]\033[00m\n" );
+
 		}
 	}
 
