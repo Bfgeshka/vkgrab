@@ -20,7 +20,7 @@ get_albums( CURL * curl )
 
 	/* getting response */
 	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
-	        acc.id, TOKEN, api_ver, addit_request );
+	         acc.id, TOKEN, api_ver, addit_request );
 	char * r = vk_get_request( url, curl );
 	free( url );
 	free( addit_request );
@@ -329,10 +329,16 @@ get_wall( char * idpath, CURL * curl )
 				att_json = json_object_get( el, "attachments" );
 				if ( att_json )
 				{
-					size_t arr_size = json_array_size( att_json );
-					for ( size_t att_i = 0; att_i < arr_size; ++att_i )
+					/*
+		//			size_t arr_size = json_array_size( att_json );
+		//			for ( size_t att_i = 0; att_i < arr_size; ++att_i )
+		//			{
+		//				json_t * att_el = json_array_get( att_json, att_i );
+					*/
+					size_t att_index;
+					json_t * att_el;
+					json_array_foreach( att_json, att_index, att_el )
 					{
-						json_t * att_el = json_array_get( att_json, att_i );
 
 						json_t * attached;
 						json_t * tmp_js;
@@ -374,7 +380,6 @@ get_wall( char * idpath, CURL * curl )
 							vid_file( curpath, attach_path, tmp_js, curl, posts, p_id );
 						}
 #undef ZZ
-
 					}
 				}
 				fprintf( posts, "------\n\n" );
@@ -503,7 +508,7 @@ get_groups( char * idpath, CURL * curl )
 	FILE * outptr = fopen( outfl, "w" );
 
 	sprintf( url, "https://api.vk.com/method/groups.get?user_id=%lld&extended=1%s&v=%s",
-	        acc.id, TOKEN, api_ver );
+	         acc.id, TOKEN, api_ver );
 	char * r = vk_get_request( url, curl );
 	free( url );
 
@@ -554,7 +559,8 @@ get_music( char * idpath, CURL * curl )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
-	sprintf( url, "https://api.vk.com/method/audio.get?owner_id=%lld&need_user=0%s", acc.id, TOKEN );
+	sprintf( url, "https://api.vk.com/method/audio.get?owner_id=%lld&need_user=0%s&v=%s",
+	         acc.id, TOKEN, api_ver );
 	char * r = vk_get_request( url, curl );
 	free( url );
 
@@ -575,14 +581,15 @@ get_music( char * idpath, CURL * curl )
 		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 	}
 
+	printf( "\nTracks: %lld.\n", js_get_int( rsp, "count" ) );
+
 	size_t index;
 	json_t * el;
-	json_array_foreach( rsp, index, el )
+	json_t * items;
+	items = json_object_get( rsp, "items" );
+	json_array_foreach( items, index, el )
 	{
-		if ( index == 0 )
-			printf( "\nTracks: %lld.\n", json_integer_value( el ) );
-		else
-			audiofile( dirpath, trackpath, el, curl, NULL, -1 );
+		audiofile( dirpath, trackpath, el, curl, NULL, -1 );
 	}
 
 	free( dirpath );
@@ -608,28 +615,6 @@ get_videos( char * idpath, CURL * curl )
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
-	/* finding out videos count */
-	sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&count=0&offset=0%s", acc.id, TOKEN );
-	char * r_pre;
-	r_pre = vk_get_request( url, curl );
-
-	/* parsing json */
-	json_t * json;
-	json_error_t json_err;
-	json = json_loads( r_pre, 0, &json_err );
-	if ( !json )
-		fprintf( stderr, "JSON scout video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
-
-	/* finding response */
-	json_t * rsp;
-	rsp = json_object_get( json, "response" );
-	if (!rsp)
-	{
-		fprintf( stderr, "Videos scout JSON error.\n" );
-		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
-	}
-
 	long long vid_count = 0;
 
 	/* Loop init */
@@ -638,8 +623,8 @@ get_videos( char * idpath, CURL * curl )
 	for ( ; offset <= times; ++offset )
 	{
 		/* creating request */
-		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s",
-		         acc.id, offset * LIMIT_V, LIMIT_V, TOKEN );
+		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
+		         acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, api_ver );
 		char * r;
 		r = vk_get_request( url, curl );
 
@@ -660,18 +645,17 @@ get_videos( char * idpath, CURL * curl )
 			fprintf( stderr, "%s\n", js_get_str(rsp, "error_msg") );
 		}
 
+		vid_count = js_get_int( rsp, "count" );
+		printf( "\nVideos: %lld.\n", vid_count );
+
 		/* iterations in array */
 		size_t index;
 		json_t * el;
-		json_array_foreach( rsp, index, el )
+		json_t * items;
+		items = json_object_get( rsp, "items" );
+		json_array_foreach( items, index, el )
 		{
-			if ( index == 0 && offset == 0 )
-			{
-				vid_count = json_integer_value( json_array_get( rsp, 0 ) );
-				printf( "\nVideos: %lld.\n", vid_count );
-			}
-			else
-				vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
+			vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
 		}
 
 		times = vid_count / LIMIT_V;

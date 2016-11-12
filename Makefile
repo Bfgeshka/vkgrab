@@ -1,4 +1,4 @@
-CC = clang
+CC = cc
 SRC = src/main.c
 
 NAME = vkgrab

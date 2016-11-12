@@ -203,7 +203,7 @@ void
 audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
 {
 	long long aid;
-	aid = js_get_int( aud_el, "aid" );
+	aid = js_get_int( aud_el, "id" );
 	char * dirty = malloc( bufs/2 );
 	char * tr_art = malloc( a_field );
 	char * tr_tit = malloc( a_field );
@@ -214,13 +214,13 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 	if ( p_id > 0 )
 	{
 		fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s - %s\")\n", p_id, aid, tr_art, tr_tit );
-		sprintf( dirty, "%lld_%s - %s_%lld.mp3", p_id, tr_art, tr_tit, aid );
+		sprintf( dirty, "%lld_%lld_%s - %s_%lld.mp3", acc.id, p_id, tr_art, tr_tit, aid );
 		fix_filename( dirty );
 		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
 	else
 	{
-		sprintf( dirty, "%s - %s _%lld.mp3", tr_art, tr_tit, aid );
+		sprintf( dirty, "%lld_%s - %s _%lld.mp3", acc.id, tr_art, tr_tit, aid );
 		fix_filename( dirty );
 		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
@@ -238,7 +238,7 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 	long long vid;
 	const char * fileurl;
 
-	vid = js_get_int( vid_el, "vid" );
+	vid = js_get_int( vid_el, "id" );
 
 	if ( p_id > 0 )
 		fprintf( log, "ATTACH: VIDEO FOR %lld: %lld, (\"%s\")\n", p_id, vid, js_get_str( vid_el, "title" ) );

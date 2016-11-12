@@ -13,7 +13,6 @@
  */
 #define APPLICATION_ID 0
 
-
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
 
@@ -34,6 +33,7 @@
 #define DIRNAME_ALB_SAVD "alb_saved"
 #define DIRNAME_AUDIO "alb_tracks"
 #define DIRNAME_VIDEO "alb_videos"
+
 #define FILNAME_POSTS "wall.txt"
 #define FILNAME_DOCS "documents.txt"
 #define FILNAME_FRIENDS "friends.txt"
@@ -65,7 +65,7 @@
  * Better use vkgrab -T for getting temporary token! Read above.
  *
  * How to get access token:
- * https://new.vk.com/dev/auth_mobile
+ * https://vk.com/dev/auth_mobile
  * recommended permissions: audio,video,docs,photos
  *
  * Example:
@@ -88,6 +88,6 @@ char TOKEN[bufs] = TOKEN_HEAD;
  *photos.get			560
  *photos.getAlbums		560
  *users.get				560
- *video.get
+ *video.get				560
  *wall.get				560
  */
