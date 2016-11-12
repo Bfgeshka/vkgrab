@@ -427,7 +427,7 @@ get_wall( char * idpath, CURL * curl )
 			}
 
 			/* Finishing */
-			fprintf( posts, "------\n\n" );
+			fprintf( posts, LOG_POSTS_DIVIDER );
 		}
 
 		offset += LIMIT_W;
