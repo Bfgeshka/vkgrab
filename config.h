@@ -46,6 +46,7 @@
 
 #define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
 
+#define LOG_POSTS_DIVIDER "------\n------\n\n"
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
  * This timer slows program down before making a request. It wouldn't be applied to file downloading.
  * Default value is 200000, which means 0.2s.
@@ -75,6 +76,8 @@
  *
  * Example:
  * char TOKEN[bufs] "&access_token=blahblahblah"
+ *
+ * Use 'offline' permission if you want pernament token. Be careful with it.
  */
 #define permissions "audio,video,docs,photos"
 #define TOKEN_HEAD "&access_token="

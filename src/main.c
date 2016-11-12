@@ -388,6 +388,7 @@ get_wall( char * idpath, CURL * curl )
 			long long p_date = js_get_int( el, "date" );
 			fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str( el, "text" ) );
 
+
 			/* Searching for attachments */
 			json_t * att_json;
 			att_json = json_object_get( el, "attachments" );
@@ -404,6 +405,24 @@ get_wall( char * idpath, CURL * curl )
 				{
 					fprintf( posts, "COMMENTS: %lld\n", comm_count );
 					get_comments( curpath, attach_path, curl, posts, p_id );
+				}
+			}
+
+			/* Checking if repost */
+			json_t * repost_json;
+			repost_json = json_object_get( el, "copy_history" );
+			if ( repost_json )
+			{
+				json_t * rep_elem;
+				rep_elem = json_array_get( repost_json, 0 );
+				if ( rep_elem )
+				{
+					fprintf( posts, "REPOST FROM: %lld\nTEXT: %s\n",
+					        js_get_int( rep_elem, "from_id" ), js_get_str( rep_elem, "text" ) );
+					json_t * rep_att_json;
+					rep_att_json = json_object_get( rep_elem, "attachments" );
+					if ( rep_att_json )
+						parse_attachments( curpath, attach_path, rep_att_json, curl, posts, p_id, -1 );
 				}
 			}
 
