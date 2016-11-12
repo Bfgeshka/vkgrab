@@ -3,7 +3,6 @@
 
 
 struct data_album * albums;
-struct control_datatypes types;
 long long photos_count = 0;
 
 size_t
@@ -64,8 +63,8 @@ get_albums( CURL * curl )
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
 			strncpy( albums[index].title, js_get_str( el, "title" ), bufs );
-			printf( "Album: %s (id:%lld, #:%lld).\n",
-			        albums[index].title, albums[index].aid, albums[index].size );
+			//printf( "Album: %s (id:%lld, #:%lld).\n",
+			//        albums[index].title, albums[index].aid, albums[index].size );
 			photos_count += albums[index].size;
 		}
 	}
@@ -199,6 +198,9 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 
 	for( i = 0; i < arr_size; ++i )
 	{
+		printf( "Album %u/%zu, id: %lld \"%s\" contains %lld photos.\n",
+		        i + 1, arr_size, albums[i].aid, albums[i].title, albums[i].size );
+
 		if ( albums[i].size > 0 )
 		{
 			int offset;
@@ -247,12 +249,12 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				items = json_object_get( rsp, "items" );
 				json_array_foreach( items, index, el )
 				{
-					photo( dirchar, curpath, el, curl, NULL, -1 );
+					dl_photo( dirchar, curpath, el, curl, NULL, -1, -1 );
 				}
 			}
 		}
 
-		request_pause();
+		api_request_pause();
 	}
 
 	free( alchar );
@@ -261,10 +263,74 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 	free( dirchar );
 }
 
+
+void
+get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long long post_id  )
+{
+	char * url = malloc( bufs );
+
+	/* Loop start */
+	long long offset = 0;
+	long long posts_count = 0;
+	do
+	{
+		/* Forming request */
+		sprintf( url, "https://api.vk.com/method/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
+		         acc.id, post_id, LIMIT_C, offset, TOKEN, api_ver );
+		char * r = vk_get_request( url, curl );
+
+		/* Parsing json */
+		json_t * json;
+		json_error_t json_err;
+		json = json_loads( r, 0, &json_err );
+		if ( !json )
+			fprintf( stderr, "JSON wall.getComments parsing error.\n%d:%s\n", json_err.line, json_err.text );
+
+		/* Finding response */
+		json_t * rsp;
+		rsp = json_object_get( json, "response" );
+		if ( !rsp )
+		{
+			fprintf( stderr, "Comment error: " );
+			rsp = json_object_get( json, "error" );
+			fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
+		}
+
+		/* Getting comments count */
+		if ( offset == 0 )
+			posts_count = js_get_int( rsp, "count" );
+
+		/* Iterations in array */
+		size_t index;
+		json_t * el;
+		json_t * items;
+		items = json_object_get( rsp, "items" );
+		json_array_foreach( items, index, el )
+		{
+			long long c_id = js_get_int( el, "id" );
+			long long c_date = js_get_int( el, "date" );
+			fprintf( logfile, "COMMENT %lld: EPOCH: %lld\nCOMMENT %lld: TEXT:\n%s\n",
+			        c_id, c_date, c_id, js_get_str( el, "text" ) );
+
+			/* Searching for attachments */
+			json_t * att_json;
+			att_json = json_object_get( el, "attachments" );
+			if ( att_json )
+				parse_attachments( dirpath, filepath, att_json, curl, logfile, post_id, c_id );
+		}
+
+		offset += LIMIT_C;
+		api_request_pause();
+	}
+	while( posts_count - offset > 0 );
+
+	free( url );
+}
+
 void
 get_wall( char * idpath, CURL * curl )
 {
-	/* char allocation */
+	/* Char allocation */
 	char * url = malloc( bufs );
 	char * curpath = malloc( bufs );
 	char * posts_path = malloc( bufs );
@@ -278,23 +344,23 @@ get_wall( char * idpath, CURL * curl )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
-	/* loop start */
-	int offset = 0;
+	/* Loop start */
+	long long offset = 0;
 	long long posts_count = 0;
 	do
 	{
-		sprintf( url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%d%s&v=%s",
+		sprintf( url, "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
 		         acc.id, LIMIT_W, offset, TOKEN, api_ver );
 		char * r = vk_get_request( url, curl );
 
-		/* parsing json */
+		/* Parsing json */
 		json_t * json;
 		json_error_t json_err;
 		json = json_loads( r, 0, &json_err );
 		if ( !json )
 			fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-		/* finding response */
+		/* Finding response */
 		json_t * rsp;
 		rsp = json_object_get( json, "response" );
 		if ( !rsp )
@@ -304,87 +370,49 @@ get_wall( char * idpath, CURL * curl )
 			fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
 		}
 
-		/* getting posts count */
+		/* Getting posts count */
 		if ( offset == 0 )
 		{
 			posts_count = js_get_int( rsp, "count" );
-			printf( "Posts: %lld.\n", posts_count );
+			printf( "Wall posts: %lld.\n", posts_count );
 		}
 
-		/* iterations in array */
+		/* Iterations in array */
 		size_t index;
 		json_t * el;
 		json_t * items;
 		items = json_object_get( rsp, "items" );
-		long long p_date;
-		long long p_id;
-
 		json_array_foreach( items, index, el )
 		{
-			if ( index != 0 || offset != 0 )
+			long long p_id = js_get_int( el, "id" );
+			long long p_date = js_get_int( el, "date" );
+			fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str( el, "text" ) );
+
+			/* Searching for attachments */
+			json_t * att_json;
+			att_json = json_object_get( el, "attachments" );
+			if ( att_json )
+				parse_attachments( curpath, attach_path, att_json, curl, posts, p_id, -1 );
+
+			/* Searching for comments */
+			json_t * comments;
+			comments = json_object_get( el, "comments" );
+			if ( comments )
 			{
-				p_id = js_get_int( el, "id" );
-				p_date = js_get_int( el, "date" );
-				fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str( el, "text" ) );
-
-				json_t * att_json;
-				att_json = json_object_get( el, "attachments" );
-				if ( att_json )
+				long long comm_count = js_get_int( comments, "count" );
+				if ( comm_count > 0 )
 				{
-					size_t att_index;
-					json_t * att_el;
-					json_array_foreach( att_json, att_index, att_el )
-					{
-
-						json_t * attached;
-						json_t * tmp_js;
-						attached = json_object_get( att_el, "type" );
-
-#define ZZ "photo"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.pictr == 1 )
-						{
-							tmp_js = json_object_get( att_el, ZZ );
-							photo( curpath, attach_path, tmp_js, curl, posts, p_id );
-						}
-#undef ZZ
-#define ZZ "link"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 )
-						{
-							tmp_js = json_object_get( att_el, ZZ );
-							fprintf( posts, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
-							         js_get_str( tmp_js, "url" ), js_get_str( tmp_js, "description" ) );
-						}
-#undef ZZ
-#define ZZ "doc"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.docmt == 1 )
-						{
-							tmp_js = json_object_get( att_el, ZZ );
-							document( curpath, attach_path, tmp_js, curl, posts, p_id );
-						}
-#undef ZZ
-#define ZZ "audio"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.audio == 1 )
-						{
-							tmp_js = json_object_get( att_el, ZZ );
-							audiofile( curpath, attach_path, tmp_js, curl, posts, p_id );
-						}
-#undef ZZ
-#define ZZ "video"
-						if ( strncmp( json_string_value(attached), ZZ, 3 ) == 0 && types.video == 1 )
-						{
-							tmp_js = json_object_get( att_el, ZZ );
-							vid_file( curpath, attach_path, tmp_js, curl, posts, p_id );
-						}
-#undef ZZ
-					}
+					fprintf( posts, "COMMENTS: %lld\n", comm_count );
+					get_comments( curpath, attach_path, curl, posts, p_id );
 				}
-
-				fprintf( posts, "------\n\n" );
 			}
+
+			/* Finishing */
+			fprintf( posts, "------\n\n" );
 		}
 
 		offset += LIMIT_W;
-		request_pause();
+		api_request_pause();
 	}
 	while( posts_count - offset > 0 );
 
@@ -442,7 +470,7 @@ get_docs( char * idpath, CURL * curl )
 	json_array_foreach( items, index, el )
 	{
 		if ( index != 0 )
-			document( dirpath, doc_path, el, curl, NULL, -1 );
+			dl_document( dirpath, doc_path, el, curl, NULL, -1, -1 );
 	}
 
 	free( dirpath );
@@ -587,7 +615,7 @@ get_music( char * idpath, CURL * curl )
 	items = json_object_get( rsp, "items" );
 	json_array_foreach( items, index, el )
 	{
-		audiofile( dirpath, trackpath, el, curl, NULL, -1 );
+		dl_audiofile( dirpath, trackpath, el, curl, NULL, -1, -1 );
 	}
 
 	free( dirpath );
@@ -656,7 +684,7 @@ get_videos( char * idpath, CURL * curl )
 		items = json_object_get( rsp, "items" );
 		json_array_foreach( items, index, el )
 		{
-			vid_file( dirpath, vidpath, el, curl, vid_log, -1 );
+			dl_video( dirpath, vidpath, el, curl, vid_log, -1, -1 );
 		}
 
 		times = vid_count / LIMIT_V;
@@ -744,9 +772,9 @@ main( int argc, char ** argv )
 	{
 		/* These are fast */
 		get_friends( output_dir, curl );
-		request_pause();
+		api_request_pause();
 		get_groups( output_dir, curl );
-		request_pause();
+		api_request_pause();
 	}
 
 	if ( types.audio == 1 )

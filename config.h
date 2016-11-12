@@ -25,6 +25,9 @@
 /* Limitations for number of videos per request. Current is 200, default is 100 */
 #define LIMIT_V 200
 
+/* Limitations for number of comments per request. Current is 100 */
+#define LIMIT_C 100
+
 /* File and directory naming for constant values */
 #define DIRNAME_DOCS "alb_docs"
 #define DIRNAME_WALL "alb_attachments"
@@ -60,7 +63,7 @@
 #define DOGET_PIC 1
 
 /* Size for usual string. */
-#define bufs 512
+#define bufs 1024
 #define a_field 32
 
 /*

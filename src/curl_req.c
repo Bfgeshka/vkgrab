@@ -129,24 +129,26 @@ vk_get_request( const char * url, CURL * hc )
 }
 
 int
-progress_func(void * ptr, double todl_total, double dl_ed, double undef_a, double undef_b)
+progress_func( void * ptr, double todl_total, double dl_ed, double undef_a, double undef_b )
 {
 	(void) undef_a;
 	(void) undef_b;
 	(void) ptr;
 
-	double percentage = (dl_ed / todl_total) * 100;
+	double percentage = 0;
+	if ( todl_total != 0 )
+		percentage = (dl_ed / todl_total) * 100;
 
 	putchar( ' ' );
 	putchar( '<' );
 	for ( unsigned char i = 0; i < 100; i += 5 )
 	{
-		if (percentage > i)
-			putchar( '|' );
+		if ( percentage > i )
+			printf( "▓" );
 		else
 			putchar( ' ' );
 	}
-	printf("> [%03.2f%%] %.1f/%.1f KiB\r\b", percentage, dl_ed/KIBI, todl_total/KIBI);
+	printf( "> [%03.2f%%] %.1f/%.1f KiB\r\b", percentage, dl_ed/KIBI, todl_total/KIBI );
 	fflush( stdout );
 	return 0;
 }
@@ -202,7 +204,7 @@ cp_file( const char * to, const char * from )
 cp_func_out_error:
 	close( fd_from );
 	if ( fd_to >= 0 )
-		close(fd_to);
+		close( fd_to );
 	return -1;
 }
 
@@ -228,7 +230,6 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 
 			if ( file_size > 0 )
 			{
-				//printf( "\r\b%-*s\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n", term_width, filepath );
 				printf( "\r\b%-*s", term_width, filepath );
 				while ( spaces_offset > 0 )
 				{
@@ -242,7 +243,6 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		if ( err == ENOENT || file_size == 0 )
 		{
 			fflush( stdout );
-			//FILE * fw = fopen( filepath, "w" );
 			FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
 			curl_easy_setopt( curl, CURLOPT_URL, url );
 			curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_file );
@@ -262,7 +262,6 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			}
 			curl_easy_reset( curl );
 			fclose( fw );
-			//printf( "\r\b%-*s\b\b\b\b\b\033[01;32m[OK]\033[00m\n", term_width, filepath );
 			cp_file( filepath, TMP_CURL_FILENAME );
 
 			printf( "\r\b%-*s", term_width, filepath );

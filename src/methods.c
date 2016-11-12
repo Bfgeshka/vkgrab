@@ -30,6 +30,7 @@ struct control_datatypes
 	short pictr;
 	short video;
 };
+struct control_datatypes types;
 
 long long
 js_get_int( json_t * src, char * key )
@@ -48,8 +49,7 @@ js_get_str( json_t * src, char * key )
 short
 user( char * name, CURL * curl )
 {
-	/*	struct data_account accz;
-	*/	strncpy( acc.screenname, name, bufs/2 );
+	strncpy( acc.screenname, name, bufs/2 );
 	acc.usr_ok = 0;
 
 	char * url = NULL;
@@ -91,8 +91,7 @@ user( char * name, CURL * curl )
 short
 group( char * name, CURL * curl )
 {
-	/*	struct data_account acc;
-	*/	acc.grp_ok = 0;
+	acc.grp_ok = 0;
 	strcpy( acc.screenname, name );
 
 	char * url = NULL;
@@ -120,10 +119,10 @@ group( char * name, CURL * curl )
 		acc.grp_ok = -2;
 		return acc.grp_ok;
 	}
-	json_t * el;
-	el = json_array_get( rsp, 0 );
 
 	/* filling struct */
+	json_t * el;
+	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
 	strncpy( acc.grp_name, js_get_str( el, "name" ), bufs/2 );
 	strncpy( acc.grp_type, js_get_str( el, "type" ), bufs/4 );
@@ -143,15 +142,21 @@ fix_filename( char * dirty )
 	}
 }
 
-void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
-photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long p_id )
+void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
+dl_photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
 {
 	long long pid;
 	json_t * biggest;
 
 	pid = js_get_int( photo_el, "id" );
-	if ( p_id > 0 )
-		fprintf( log, "ATTACH: PHOTO FOR %lld: %lld\n", p_id, pid);
+	if ( post_id > 0 )
+	{
+		if ( comm_id > 0 )
+			fprintf( log, "COMMENT %lld: ATTACH: PHOTO %lld\n", comm_id, pid);
+		else
+			fprintf( log, "ATTACH: PHOTO FOR %lld: %lld\n", post_id, pid);
+	}
+
 
 	biggest = json_object_get( photo_el, "photo_2560" );
 	if ( !biggest )
@@ -174,24 +179,37 @@ photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * l
 	}
 
 	/* downloading */
-	if ( p_id > 0 )
-		sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, acc.id, p_id, pid );
+	if ( post_id > 0 )
+	{
+		if ( comm_id > 0 )
+			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.jpg", dirpath, acc.id, post_id, comm_id, pid );
+		else
+			sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, acc.id, post_id, pid );
+	}
 	else
 		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, acc.id, pid );
 
 	vk_get_file( json_string_value( biggest ), filepath, curl );
 }
 
-void /* if no p_id, then set it to '-1', FILE * log replace with NULL */
-document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * log, long long p_id )
+void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
+dl_document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
 {
 	long long did;
 	did = js_get_int( doc_el, "id" );
 
-	if ( p_id > 0 )
+	if ( post_id > 0 )
 	{
-		fprintf( log, "ATTACH: DOCUMENT FOR %lld: %lld (\"%s\")\n", p_id, did, js_get_str( doc_el, "title" ));
-		sprintf( filepath, "%s/%lld_%lld_%lld.%s", dirpath, acc.id, p_id, did, js_get_str( doc_el, "ext" ) );
+		if ( comm_id > 0 )
+		{
+			fprintf( log, "COMMENT %lld: ATTACH: DOCUMENT %lld (\"%s\")\n", comm_id, did, js_get_str( doc_el, "title" ));
+			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.%s", dirpath, acc.id, post_id, comm_id, did, js_get_str( doc_el, "ext" ) );
+		}
+		else
+		{
+			fprintf( log, "ATTACH: DOCUMENT FOR %lld: %lld (\"%s\")\n", post_id, did, js_get_str( doc_el, "title" ));
+			sprintf( filepath, "%s/%lld_%lld_%lld.%s", dirpath, acc.id, post_id, did, js_get_str( doc_el, "ext" ) );
+		}
 	}
 	else
 		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, acc.id, did, js_get_str( doc_el, "ext" ) );
@@ -200,7 +218,7 @@ document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * 
 }
 
 void
-audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE * log, long long p_id )
+dl_audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
 {
 	long long aid;
 	aid = js_get_int( aud_el, "id" );
@@ -211,10 +229,19 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 	strncpy( tr_art, js_get_str( aud_el, "artist" ), a_field );
 	strncpy( tr_tit, js_get_str( aud_el, "title" ), a_field );
 
-	if ( p_id > 0 )
+	if ( post_id > 0 )
 	{
-		fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s - %s\")\n", p_id, aid, tr_art, tr_tit );
-		sprintf( dirty, "%lld_%lld_%s - %s_%lld.mp3", acc.id, p_id, tr_art, tr_tit, aid );
+		if ( comm_id > 0 )
+		{
+			fprintf( log, "COMMENT %lld: ATTACH: TRACK %lld (\"%s - %s\")\n", comm_id, aid, tr_art, tr_tit );
+			sprintf( dirty, "%lld_%lld:%lld_%s - %s_%lld.mp3", acc.id, post_id, comm_id, tr_art, tr_tit, aid );
+		}
+		else
+		{
+			fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s - %s\")\n", post_id, aid, tr_art, tr_tit );
+			sprintf( dirty, "%lld_%lld_%s - %s_%lld.mp3", acc.id, post_id, tr_art, tr_tit, aid );
+		}
+
 		fix_filename( dirty );
 		sprintf( filepath, "%s/%s", dirpath, dirty );
 	}
@@ -233,15 +260,20 @@ audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE *
 }
 
 void
-vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long p_id )
+dl_video( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
 {
 	long long vid;
 	const char * fileurl;
 
 	vid = js_get_int( vid_el, "id" );
 
-	if ( p_id > 0 )
-		fprintf( log, "ATTACH: VIDEO FOR %lld: %lld, (\"%s\")\n", p_id, vid, js_get_str( vid_el, "title" ) );
+	if ( post_id > 0 )
+	{
+		if ( comm_id > 0 )
+			fprintf( log, "COMMENT %lld: ATTACH: VIDEO %lld, (\"%s\")\n", comm_id, vid, js_get_str( vid_el, "title" ) );
+		else
+			fprintf( log, "ATTACH: VIDEO FOR %lld: %lld, (\"%s\")\n", post_id, vid, js_get_str( vid_el, "title" ) );
+	}
 	else
 		fprintf( log, "\n%lld:(\"%s\")", vid, js_get_str( vid_el, "title" ) );
 
@@ -255,7 +287,7 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 		if ( v_link )
 		{
 			fileurl = json_string_value( v_link );
-			if ( p_id > 0 )
+			if ( post_id > 0 )
 				fprintf( log, "ATTACH: VIDEO EXTERNAL LINK: %s\n", fileurl );
 			else
 				fprintf( log, " %s", fileurl );
@@ -284,8 +316,13 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 
 			if ( v_link )
 			{
-				if ( p_id > 0 )
-					sprintf( filepath, "%s/%lld_%lld.mp4", dirpath, p_id, vid );
+				if ( post_id > 0 )
+				{
+					if ( comm_id > 0 )
+						sprintf( filepath, "%s/%lld:%lld_%lld.mp4", dirpath, post_id, comm_id, vid );
+					else
+						sprintf( filepath, "%s/%lld_%lld.mp4", dirpath, post_id, vid );
+				}
 				else
 					sprintf( filepath, "%s/%lld.mp4", dirpath, vid );
 
@@ -299,8 +336,58 @@ vid_file( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 		fileurl = json_string_value( v_block );
 		if ( v_block )
 		{
-			if ( p_id < 0 )
+			if ( post_id < 0 )
 				fprintf( log, " %s", fileurl );
+		}
+	}
+}
+
+void
+parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * curl, FILE * logfile, long long post_id, long long comm_id )
+{
+	size_t att_index;
+	json_t * att_elem;
+	char data_type[5][6] = { "photo", "link", "doc", "audio", "video" };
+
+	json_array_foreach( input_json, att_index, att_elem )
+	{
+		const char * att_type = js_get_str( att_elem, "type" );
+		json_t * output_json;
+
+		/* If photo: 0 */
+		if ( strcmp( att_type, data_type[0] ) == 0 && types.pictr == 1 )
+		{
+			output_json = json_object_get( att_elem, data_type[0] );
+			dl_photo( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
+		}
+
+		/* If link: 1 */
+		if ( strcmp( att_type, data_type[1] ) == 0 )
+		{
+			output_json = json_object_get( att_elem, data_type[1] );
+			fprintf( logfile, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
+			         js_get_str( output_json, "url" ), js_get_str( output_json, "description" ) );
+		}
+
+		/* If doc: 2 */
+		if ( strcmp( att_type, data_type[2] ) == 0 && types.docmt == 1 )
+		{
+			output_json = json_object_get( att_elem, data_type[2] );
+			dl_document( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
+		}
+
+		/* If audio: 3 */
+		if ( strcmp( att_type, data_type[3] ) == 0 && types.audio == 1 )
+		{
+			output_json = json_object_get( att_elem, data_type[3] );
+			dl_audiofile( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
+		}
+
+		/* If video: 4 */
+		if ( strcmp( att_type, data_type[4] ) == 0 && types.video == 1 )
+		{
+			output_json = json_object_get( att_elem, data_type[4] );
+			dl_video( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
 		}
 	}
 }
@@ -321,7 +408,7 @@ help_print()
 }
 
 void
-request_pause()
+api_request_pause()
 {
 	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 )
 		puts( "Sleep error." );
