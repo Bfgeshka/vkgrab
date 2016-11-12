@@ -48,8 +48,8 @@ js_get_str( json_t * src, char * key )
 short
 user( char * name, CURL * curl )
 {
-/*	struct data_account accz;
-*/	strncpy( acc.screenname, name, bufs/2 );
+	/*	struct data_account accz;
+	*/	strncpy( acc.screenname, name, bufs/2 );
 	acc.usr_ok = 0;
 
 	char * url = NULL;
@@ -91,8 +91,8 @@ user( char * name, CURL * curl )
 short
 group( char * name, CURL * curl )
 {
-/*	struct data_account acc;
-*/	acc.grp_ok = 0;
+	/*	struct data_account acc;
+	*/	acc.grp_ok = 0;
 	strcpy( acc.screenname, name );
 
 	char * url = NULL;
