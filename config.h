@@ -5,7 +5,7 @@
  * For creating your application visit https://vk.com/editapp?act=create.
  * Choose "standalone application" and give it a name you like.
  *
- * After if go to "My apps": https://vk.com/apps?act=manage
+ * After go to "My apps": https://vk.com/apps?act=manage
  * Go to 'manage' on the right side.
  *
  * Choose 'settings', and there you can see your application id.
@@ -16,16 +16,16 @@
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
 
-/* Limitations for number of photos per request. Current is 1000 */
+/* Limitation for number of photos per request. Current is 1000 */
 #define LIMIT_A 1000
 
-/* Limitations for number of wall posts per request. Current is 100 */
+/* Limitation for number of wall posts per request. Current is 100 */
 #define LIMIT_W 100
 
-/* Limitations for number of videos per request. Current is 200, default is 100 */
+/* Limitation for number of videos per request. Current is 200, default is 100 */
 #define LIMIT_V 200
 
-/* Limitations for number of comments per request. Current is 100 */
+/* Limitation for number of comments per request. Current is 100 */
 #define LIMIT_C 100
 
 /* File and directory naming for constant values */
@@ -46,7 +46,9 @@
 
 #define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
 
+/* Diividing string between posts in FILNAME_POSTS */
 #define LOG_POSTS_DIVIDER "-~-~-~\n~-~-~-\n\n"
+
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
  * This timer slows program down before making a request. It wouldn't be applied to file downloading.
  * Default value is 200000, which means 0.2s.
@@ -77,9 +79,9 @@
  * Example:
  * char TOKEN[bufs] "&access_token=blahblahblah"
  *
- * Use 'offline' permission if you want pemnanent token. Be careful with it.
+ * Use 'offline' permission if you want permanent token. Be careful with it.
  */
-#define permissions "audio,video,docs,photos"
+#define permissions "audio,video,docs,photos,offline"
 #define TOKEN_HEAD "&access_token="
 char TOKEN[bufs] = TOKEN_HEAD;
 
