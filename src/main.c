@@ -252,7 +252,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 			}
 		}
 
-				request_pause();
+		request_pause();
 	}
 
 	free( alchar );
@@ -331,12 +331,6 @@ get_wall( char * idpath, CURL * curl )
 				att_json = json_object_get( el, "attachments" );
 				if ( att_json )
 				{
-					/*
-					//			size_t arr_size = json_array_size( att_json );
-					//			for ( size_t att_i = 0; att_i < arr_size; ++att_i )
-					//			{
-					//				json_t * att_el = json_array_get( att_json, att_i );
-					*/
 					size_t att_index;
 					json_t * att_el;
 					json_array_foreach( att_json, att_index, att_el )
@@ -384,10 +378,9 @@ get_wall( char * idpath, CURL * curl )
 #undef ZZ
 					}
 				}
+
 				fprintf( posts, "------\n\n" );
 			}
-
-
 		}
 
 		offset += LIMIT_W;

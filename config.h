@@ -11,7 +11,7 @@
  * Choose 'settings', and there you can see your application id.
  * Copy it and replace value of APPLICATION_ID.
  */
-#define APPLICATION_ID 0
+#define APPLICATION_ID 5525618
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -40,6 +40,8 @@
 #define FILNAME_GROUPS "communities.txt"
 #define FILNAME_VIDEOS "videos.txt"
 #define FILNAME_IDNAME "description.txt"
+
+#define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
 
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
  * This timer slows program down before making a request. It wouldn't be applied to file downloading.
@@ -77,17 +79,3 @@ char TOKEN[bufs] = TOKEN_HEAD;
 
 /* Currently used api version */
 #define api_ver "5.60"
-
-
-/*
- *audio.get
- *docs.get				560
- *friends.get			560
- *groups.get			560
- *groups.getById		560
- *photos.get			560
- *photos.getAlbums		560
- *users.get				560
- *video.get				560
- *wall.get				560
- */
