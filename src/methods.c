@@ -138,7 +138,7 @@ fix_filename( char * dirty )
 	unsigned i;
 	for ( i = 0; i < name_length; ++i )
 	{
-		if ( dirty[i] == '/' || dirty[i] == '\\' )
+		if ( ( (dirty[i] & 0xC0) != 0x80 ) && (dirty[i] == '/' || dirty[i] == '\\') )
 			dirty[i] = '_';
 	}
 }

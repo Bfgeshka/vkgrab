@@ -19,14 +19,29 @@ struct crl_st
 	size_t size;
 };
 
+/* terminal width */
 unsigned
 get_width( void )
 {
-    unsigned width = DEFAULT_TERM_COL;
-    struct winsize ws;
-    if ( ioctl( 1, TIOCGWINSZ, &ws ) == 0 )
-        width = ws.ws_col;
-    return width;
+	unsigned width = DEFAULT_TERM_COL;
+	struct winsize ws;
+	if ( ioctl( 1, TIOCGWINSZ, &ws ) == 0 )
+		width = ws.ws_col;
+	return width;
+}
+
+/* Num. of spaces for aligning [right side] because of unicode */
+unsigned
+utf8_char_offset( const char * input )
+{
+	size_t bytelen = strlen( input );
+	unsigned char_count = 0;
+
+	for ( unsigned i = 0; i < bytelen; ++i )
+		if ( (input[i] & 0xC0) != 0x80 )
+			char_count++;
+
+	return bytelen - char_count;
 }
 
 size_t
@@ -128,6 +143,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 {
 	if ( curl )
 	{
+		unsigned spaces_offset = utf8_char_offset( filepath );
 		unsigned term_width = get_width();
 		/* skip downloading if file exists */
 		errno = 0;
@@ -144,7 +160,14 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 
 			if ( file_size > 0 )
 			{
-				printf( "\r\b%-*s\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n", term_width, filepath );
+				//printf( "\r\b%-*s\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n", term_width, filepath );
+				printf( "\r\b%-*s", term_width, filepath );
+				while ( spaces_offset > 0 )
+				{
+					--spaces_offset;
+					putchar( ' ' );
+				}
+				printf( "\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n"  );
 				return 0;
 			}
 		}
@@ -170,7 +193,14 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			}
 			curl_easy_reset( curl );
 			fclose( fw );
-			printf( "\r\b%-*s\b\b\b\b\b\033[01;32m[OK]\033[00m\n", term_width, filepath );
+			//printf( "\r\b%-*s\b\b\b\b\b\033[01;32m[OK]\033[00m\n", term_width, filepath );
+				printf( "\r\b%-*s", term_width, filepath );
+				while ( spaces_offset > 0 )
+				{
+					--spaces_offset;
+					putchar( ' ' );
+				}
+				printf( "\b\b\b\b\b\033[01;32m[OK]\033[00m\n"  );
 		}
 	}
 
