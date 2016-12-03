@@ -11,7 +11,7 @@
  * Choose 'settings', and there you can see your application id.
  * Copy it and replace value of APPLICATION_ID.
  */
-#define APPLICATION_ID 5525618
+#define APPLICATION_ID 5525610
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -34,7 +34,9 @@
 #define DIRNAME_ALB_PROF "alb_profile"
 #define DIRNAME_ALB_WALL "alb_wall"
 #define DIRNAME_ALB_SAVD "alb_saved"
+/*
 #define DIRNAME_AUDIO "alb_tracks"
+*/
 #define DIRNAME_VIDEO "alb_videos"
 
 #define FILNAME_POSTS "wall.txt"
@@ -67,7 +69,9 @@
 
 /* Size for usual string. */
 #define bufs 1024
+/*
 #define a_field 32
+*/
 
 /*
  * Better use vkgrab -T for getting temporary token! Read above.
@@ -81,7 +85,7 @@
  *
  * Use 'offline' permission if you want permanent token. Be careful with it.
  */
-#define permissions "audio,video,docs,photos,offline"
+#define permissions "audio,video,docs,photos"
 #define TOKEN_HEAD "&access_token="
 char TOKEN[bufs] = TOKEN_HEAD;
 

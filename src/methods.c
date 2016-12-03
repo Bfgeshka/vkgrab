@@ -25,7 +25,9 @@ struct data_album
 
 struct control_datatypes
 {
-	short audio;
+	/*
+	* short audio;
+	*/
 	short docmt;
 	short pictr;
 	short video;
@@ -217,6 +219,7 @@ dl_document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE
 	vk_get_file( js_get_str( doc_el, "url" ), filepath, curl );
 }
 
+/*
 void
 dl_audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
 {
@@ -258,6 +261,7 @@ dl_audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FIL
 
 	vk_get_file( js_get_str( aud_el, "url" ), filepath, curl );
 }
+*/
 
 void
 dl_video( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
@@ -377,11 +381,13 @@ parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * 
 		}
 
 		/* If audio: 3 */
+		/*
 		if ( strcmp( att_type, data_type[3] ) == 0 && types.audio == 1 )
 		{
 			output_json = json_object_get( att_elem, data_type[3] );
 			dl_audiofile( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
 		}
+		*/
 
 		/* If video: 4 */
 		if ( strcmp( att_type, data_type[4] ) == 0 && types.video == 1 )
@@ -402,8 +408,12 @@ help_print()
 	puts("  -t TOKEN             give a valid token without header \"&access_token=\"");
 	puts("  -u USER              ignore group with same screenname");
 	puts("  -g GROUP             ignore user with same screenname");
+	/*
 	puts("  -ya, -yv, -yd, -yp   allows downloading of audio, video, documents or pictures");
 	puts("  -na, -nv, -nd, -np   forbids downloading of audio, video, documents or pictures\n");
+	*/
+	puts("  -yv, -yd, -yp   allows downloading of video, documents or pictures");
+	puts("  -nv, -nd, -np   forbids downloading of video, documents or pictures\n");
 	puts("Notice: if both USER and GROUP do exist, group id proceeds");
 }
 

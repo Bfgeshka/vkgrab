@@ -130,8 +130,10 @@ get_id( int argc, char ** argv, CURL * curl )
 						types.pictr = 0;
 					else if ( argv[t][2] == 'd' )
 						types.docmt = 0;
+					/*
 					else if ( argv[t][2] == 'a' )
 						types.audio = 0;
+					*/
 					else if ( argv[t][2] == 'v' )
 						types.video = 0;
 					else
@@ -146,8 +148,10 @@ get_id( int argc, char ** argv, CURL * curl )
 						types.pictr = 1;
 					else if ( argv[t][2] == 'd' )
 						types.docmt = 1;
+					/*
 					else if ( argv[t][2] == 'a' )
 						types.audio = 1;
+					*/
 					else if ( argv[t][2] == 'v' )
 						types.video = 1;
 					else
@@ -262,7 +266,6 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 	free( url );
 	free( dirchar );
 }
-
 
 void
 get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long long post_id  )
@@ -591,14 +594,15 @@ get_groups( char * idpath, CURL * curl )
 	fclose( outptr );
 }
 
+/*
 void
 get_music( char * idpath, CURL * curl )
 {
 	char * url = malloc( bufs );
 	char * dirpath = malloc( bufs );
 	char * trackpath = malloc( bufs );
-
-	/* creating document directory */
+*/
+	/* creating document directory *//*
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_AUDIO );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
@@ -608,15 +612,15 @@ get_music( char * idpath, CURL * curl )
 	         acc.id, TOKEN, api_ver );
 	char * r = vk_get_request( url, curl );
 	free( url );
-
-	/* parsing json */
+*/
+	/* parsing json *//*
 	json_t * json;
 	json_error_t json_err;
 	json = json_loads( r, 0, &json_err );
 	if ( !json )
 		fprintf( stderr, "JSON audio.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
-	/* finding response */
+	*//* finding response *//*
 	json_t * rsp;
 	rsp = json_object_get( json, "response" );
 	if ( !rsp )
@@ -640,6 +644,7 @@ get_music( char * idpath, CURL * curl )
 	free( dirpath );
 	free( trackpath );
 }
+*/
 
 void
 get_videos( char * idpath, CURL * curl )
@@ -729,7 +734,9 @@ main( int argc, char ** argv )
 	}
 
 	/* Define downloaded datatypes */
+	/*
 	types.audio = DOGET_AUD;
+	*/
 	types.docmt = DOGET_DOC;
 	types.pictr = DOGET_PIC;
 	types.video = DOGET_VID;
@@ -795,10 +802,10 @@ main( int argc, char ** argv )
 		get_groups( output_dir, curl );
 		api_request_pause();
 	}
-
+/*
 	if ( types.audio == 1 )
 		get_music( output_dir, curl );
-
+*/
 	if ( types.video == 1 )
 		get_videos( output_dir, curl );
 
