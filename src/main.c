@@ -63,8 +63,6 @@ get_albums( CURL * curl )
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
 			strncpy( albums[index].title, js_get_str( el, "title" ), bufs );
-			//printf( "Album: %s (id:%lld, #:%lld).\n",
-			//        albums[index].title, albums[index].aid, albums[index].size );
 			photos_count += albums[index].size;
 		}
 	}
@@ -296,7 +294,11 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 		{
 			fprintf( stderr, "Comment error: " );
 			rsp = json_object_get( json, "error" );
-			fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
+			const char * error_message = js_get_str( rsp, "error_msg" );
+			fprintf( stderr, "%s\n", error_message );
+			/* Do not repeat trying if comments are restricted */
+			if ( strcmp( error_message, "Access to post comments denied" ) == 0 )
+				types.comts = 0;
 		}
 
 		/* Getting comments count */
@@ -407,7 +409,8 @@ get_wall( char * idpath, CURL * curl )
 				if ( comm_count > 0 )
 				{
 					fprintf( posts, "COMMENTS: %lld\n", comm_count );
-					get_comments( curpath, attach_path, curl, posts, p_id );
+					if (types.comts == 1)
+						get_comments( curpath, attach_path, curl, posts, p_id );
 				}
 			}
 
@@ -594,58 +597,6 @@ get_groups( char * idpath, CURL * curl )
 	fclose( outptr );
 }
 
-/*
-void
-get_music( char * idpath, CURL * curl )
-{
-	char * url = malloc( bufs );
-	char * dirpath = malloc( bufs );
-	char * trackpath = malloc( bufs );
-*/
-	/* creating document directory *//*
-	sprintf( dirpath, "%s/%s", idpath, DIRNAME_AUDIO );
-	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
-		if ( errno != EEXIST )
-			fprintf( stderr, "mkdir() error (%d).\n", errno );
-
-	sprintf( url, "https://api.vk.com/method/audio.get?owner_id=%lld&need_user=0%s&v=%s",
-	         acc.id, TOKEN, api_ver );
-	char * r = vk_get_request( url, curl );
-	free( url );
-*/
-	/* parsing json *//*
-	json_t * json;
-	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( !json )
-		fprintf( stderr, "JSON audio.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
-
-	*//* finding response *//*
-	json_t * rsp;
-	rsp = json_object_get( json, "response" );
-	if ( !rsp )
-	{
-		fprintf( stderr, "Music response JSON error.\n" );
-		rsp = json_object_get( json, "error" );
-		fprintf( stderr, "%s\n", js_get_str( rsp, "error_msg" ) );
-	}
-
-	printf( "\nTracks: %lld.\n", js_get_int( rsp, "count" ) );
-
-	size_t index;
-	json_t * el;
-	json_t * items;
-	items = json_object_get( rsp, "items" );
-	json_array_foreach( items, index, el )
-	{
-		dl_audiofile( dirpath, trackpath, el, curl, NULL, -1, -1 );
-	}
-
-	free( dirpath );
-	free( trackpath );
-}
-*/
-
 void
 get_videos( char * idpath, CURL * curl )
 {
@@ -734,12 +685,10 @@ main( int argc, char ** argv )
 	}
 
 	/* Define downloaded datatypes */
-	/*
-	types.audio = DOGET_AUD;
-	*/
 	types.docmt = DOGET_DOC;
 	types.pictr = DOGET_PIC;
 	types.video = DOGET_VID;
+	types.comts = DOGET_COM;
 
 	/* Checking id */
 	long long id = get_id( argc, argv, curl );
@@ -802,10 +751,7 @@ main( int argc, char ** argv )
 		get_groups( output_dir, curl );
 		api_request_pause();
 	}
-/*
-	if ( types.audio == 1 )
-		get_music( output_dir, curl );
-*/
+
 	if ( types.video == 1 )
 		get_videos( output_dir, curl );
 

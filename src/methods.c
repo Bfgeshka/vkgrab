@@ -25,14 +25,12 @@ struct data_album
 
 struct control_datatypes
 {
-	/*
-	* short audio;
-	*/
 	short docmt;
 	short pictr;
 	short video;
-};
-struct control_datatypes types;
+	short comts;
+} types;
+//struct control_datatypes types;
 
 long long
 js_get_int( json_t * src, char * key )
@@ -219,50 +217,6 @@ dl_document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE
 	vk_get_file( js_get_str( doc_el, "url" ), filepath, curl );
 }
 
-/*
-void
-dl_audiofile( char * dirpath, char * filepath, json_t * aud_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
-{
-	long long aid;
-	aid = js_get_int( aud_el, "id" );
-	char * dirty = malloc( bufs/2 );
-	char * tr_art = malloc( a_field );
-	char * tr_tit = malloc( a_field );
-
-	strncpy( tr_art, js_get_str( aud_el, "artist" ), a_field );
-	strncpy( tr_tit, js_get_str( aud_el, "title" ), a_field );
-
-	if ( post_id > 0 )
-	{
-		if ( comm_id > 0 )
-		{
-			fprintf( log, "COMMENT %lld: ATTACH: TRACK %lld (\"%s - %s\")\n", comm_id, aid, tr_art, tr_tit );
-			sprintf( dirty, "%lld_%lld:%lld_%s - %s_%lld.mp3", acc.id, post_id, comm_id, tr_art, tr_tit, aid );
-		}
-		else
-		{
-			fprintf( log, "ATTACH: TRACK FOR %lld: %lld (\"%s - %s\")\n", post_id, aid, tr_art, tr_tit );
-			sprintf( dirty, "%lld_%lld_%s - %s_%lld.mp3", acc.id, post_id, tr_art, tr_tit, aid );
-		}
-
-		fix_filename( dirty );
-		sprintf( filepath, "%s/%s", dirpath, dirty );
-	}
-	else
-	{
-		sprintf( dirty, "%lld_%s - %s _%lld.mp3", acc.id, tr_art, tr_tit, aid );
-		fix_filename( dirty );
-		sprintf( filepath, "%s/%s", dirpath, dirty );
-	}
-
-	free( tr_art );
-	free( tr_tit );
-	free( dirty );
-
-	vk_get_file( js_get_str( aud_el, "url" ), filepath, curl );
-}
-*/
-
 void
 dl_video( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
 {
@@ -351,7 +305,7 @@ parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * 
 {
 	size_t att_index;
 	json_t * att_elem;
-	char data_type[5][6] = { "photo", "link", "doc", "audio", "video" };
+	char data_type[5][6] = { "photo", "link", "doc", "video" };
 
 	json_array_foreach( input_json, att_index, att_elem )
 	{
@@ -380,19 +334,10 @@ parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * 
 			dl_document( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
 		}
 
-		/* If audio: 3 */
-		/*
-		if ( strcmp( att_type, data_type[3] ) == 0 && types.audio == 1 )
+		/* If video: 3 */
+		if ( strcmp( att_type, data_type[3] ) == 0 && types.video == 1 )
 		{
 			output_json = json_object_get( att_elem, data_type[3] );
-			dl_audiofile( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
-		}
-		*/
-
-		/* If video: 4 */
-		if ( strcmp( att_type, data_type[4] ) == 0 && types.video == 1 )
-		{
-			output_json = json_object_get( att_elem, data_type[4] );
 			dl_video( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
 		}
 	}
@@ -408,10 +353,6 @@ help_print()
 	puts("  -t TOKEN             give a valid token without header \"&access_token=\"");
 	puts("  -u USER              ignore group with same screenname");
 	puts("  -g GROUP             ignore user with same screenname");
-	/*
-	puts("  -ya, -yv, -yd, -yp   allows downloading of audio, video, documents or pictures");
-	puts("  -na, -nv, -nd, -np   forbids downloading of audio, video, documents or pictures\n");
-	*/
 	puts("  -yv, -yd, -yp   allows downloading of video, documents or pictures");
 	puts("  -nv, -nd, -np   forbids downloading of video, documents or pictures\n");
 	puts("Notice: if both USER and GROUP do exist, group id proceeds");

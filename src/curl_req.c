@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
 #define KIBI 1024
 #define DEFAULT_TERM_COL 80
 
