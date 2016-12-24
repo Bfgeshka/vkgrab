@@ -1,3 +1,6 @@
+#ifndef CONFIG_H_
+#define CONFIG_H_
+
 /*
  * For generation of token getting link.
  * Create your own application, get its ID and insert it here.
@@ -11,7 +14,7 @@
  * Choose 'settings', and there you can see your application id.
  * Copy it and replace value of APPLICATION_ID.
  */
-#define APPLICATION_ID 5525615
+#define APPLICATION_ID 3249177
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -65,23 +68,21 @@
 #define DOGET_COM 1
 
 /* Size for usual string. */
-#define bufs 1024
+#define bufs 512
 
 /*
- * Better use vkgrab -T for getting temporary token! Read above.
- *
  * How to get access token:
  * https://vk.com/dev/auth_mobile
  * recommended permissions: audio,video,docs,photos
  *
- * Example:
- * char TOKEN[bufs] "&access_token=blahblahblah"
- *
  * Use 'offline' permission if you want permanent token. Be careful with it.
  */
-#define permissions "video,docs,photos"
-#define TOKEN_HEAD "&access_token="
-char TOKEN[bufs] = TOKEN_HEAD;
+#define permissions "video,docs,photos,offline"
+/*#define TOKEN_HEAD "&access_token="
+char TOKEN[bufs] = TOKEN_HEAD; */
+#define TOKEN "&access_token="
 
 /* Currently used api version */
 #define api_ver "5.60"
+
+#endif

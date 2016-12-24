@@ -1,9 +1,6 @@
-#include "../config.h"
 #include <curl/curl.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -11,14 +8,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define KIBI 1024
-#define DEFAULT_TERM_COL 80
+#include "curl_req.h"
 
-struct crl_st
-{
-	char * payload;
-	size_t size;
-};
 
 /* terminal width */
 unsigned
