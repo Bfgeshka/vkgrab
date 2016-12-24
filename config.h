@@ -78,7 +78,7 @@
  * Use 'offline' permission if you want permanent token. Be careful with it.
  * You can add your permanent token after '=' in CONST_TOKEN string.
  */
-#define permissions "video,docs,photos,offline"
+#define permissions "video,docs,photos"
 #define TOKEN_HEAD "&access_token="
 #define CONST_TOKEN "&access_token="
 
