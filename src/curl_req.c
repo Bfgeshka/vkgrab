@@ -147,7 +147,7 @@ int
 cp_file( const char * to, const char * from )
 {
 	int fd_to, fd_from;
-	char buf[8*bufs];
+	char buf[8*BUF_S];
 	ssize_t nread;
 
 	fd_from = open( from, O_RDONLY );

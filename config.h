@@ -14,7 +14,7 @@
  * Choose 'settings', and there you can see your application id.
  * Copy it and replace value of APPLICATION_ID.
  */
-#define APPLICATION_ID 3249177
+#define APPLICATION_ID 0000000
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -48,7 +48,7 @@
 
 #define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
 
-/* Diividing string between posts in FILNAME_POSTS */
+/* Dividing string between posts in FILNAME_POSTS */
 #define LOG_POSTS_DIVIDER "-~-~-~\n~-~-~-\n\n"
 
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
@@ -68,7 +68,7 @@
 #define DOGET_COM 1
 
 /* Size for usual string. */
-#define bufs 512
+#define BUF_S 512
 
 /*
  * How to get access token:
@@ -76,11 +76,11 @@
  * recommended permissions: audio,video,docs,photos
  *
  * Use 'offline' permission if you want permanent token. Be careful with it.
+ * You can add your permanent token after '=' in CONST_TOKEN string.
  */
 #define permissions "video,docs,photos,offline"
-/*#define TOKEN_HEAD "&access_token="
-char TOKEN[bufs] = TOKEN_HEAD; */
-#define TOKEN "&access_token="
+#define TOKEN_HEAD "&access_token="
+#define CONST_TOKEN "&access_token="
 
 /* Currently used api version */
 #define api_ver "5.60"

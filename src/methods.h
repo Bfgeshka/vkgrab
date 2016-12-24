@@ -3,6 +3,7 @@
 
 #include <curl/curl.h>
 #include <jansson.h>
+#include "../config.h"
 
 #define NAME_BUF 512
 
@@ -60,5 +61,6 @@ void         get_docs          ( char *, CURL * );
 void         get_friends       ( char *, CURL * );
 void         get_groups        ( char *, CURL * );
 void         get_videos        ( char *, CURL * );
+void         check_token       ( void );
 
 #endif

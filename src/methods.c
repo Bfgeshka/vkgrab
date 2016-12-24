@@ -10,6 +10,15 @@
 #include "methods.h"
 #include "curl_req.h"
 
+char TOKEN[BUF_S] = TOKEN_HEAD;
+
+void
+check_token()
+{
+	if ( strlen( TOKEN ) != strlen( CONST_TOKEN ) )
+		sprintf( TOKEN, "%s", CONST_TOKEN );
+}
+
 long long
 js_get_int( json_t * src, char * key )
 {
@@ -27,11 +36,11 @@ js_get_str( json_t * src, char * key )
 short
 user( char * name, CURL * curl )
 {
-	strncpy( acc.screenname, name, bufs/2 );
+	strncpy( acc.screenname, name, BUF_S/2 );
 	acc.usr_ok = 0;
 
 	char * url = NULL;
-	url = malloc( bufs );
+	url = malloc( BUF_S );
 	sprintf( url, "https://api.vk.com/method/users.get?user_ids=%s&v=%s", name, api_ver );
 	char * r = vk_get_request(url, curl);
 	free(url);
@@ -60,8 +69,8 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	acc.id = js_get_int( el, "id" );
-	strncpy( acc.usr_fname, js_get_str( el, "first_name" ), bufs/2 );
-	strncpy( acc.usr_lname, js_get_str( el, "last_name" ), bufs/2 );
+	strncpy( acc.usr_fname, js_get_str( el, "first_name" ), BUF_S/2 );
+	strncpy( acc.usr_lname, js_get_str( el, "last_name" ), BUF_S/2 );
 
 	return acc.usr_ok;
 }
@@ -73,7 +82,7 @@ group( char * name, CURL * curl )
 	strcpy( acc.screenname, name );
 
 	char * url = NULL;
-	url = malloc( bufs );
+	url = malloc( BUF_S );
 	sprintf( url, "https://api.vk.com/method/groups.getById?v=%s&group_id=%s", api_ver, name );
 	char * r = vk_get_request( url, curl );
 	free(url);
@@ -102,8 +111,8 @@ group( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
-	strncpy( acc.grp_name, js_get_str( el, "name" ), bufs/2 );
-	strncpy( acc.grp_type, js_get_str( el, "type" ), bufs/4 );
+	strncpy( acc.grp_name, js_get_str( el, "name" ), BUF_S/2 );
+	strncpy( acc.grp_type, js_get_str( el, "type" ), BUF_S/4 );
 
 	return acc.grp_ok;
 }
@@ -328,7 +337,7 @@ help_print()
 	puts("");
 	puts("Options:");
 	puts("  -T                   generate link for getting a token");
-	puts("  -t TOKEN             give a valid token without header \"&access_token=\"");
+	puts("  -t TOKEN             give a valid token without header \"&access_token=\". If TOKEN is zero then anonymous access given");
 	puts("  -u USER              ignore group with same screenname");
 	puts("  -g GROUP             ignore user with same screenname");
 	puts("  -yv, -yd, -yp   allows downloading of video, documents or pictures");
@@ -347,8 +356,8 @@ api_request_pause()
 size_t
 get_albums( CURL * curl )
 {
-	char * url = malloc( bufs );
-	char * addit_request = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * addit_request = malloc( BUF_S );
 
 	/* Wall album is hidden for groups */
 	if ( acc.id < 0 )
@@ -401,7 +410,7 @@ get_albums( CURL * curl )
 		{
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
-			strncpy( albums[index].title, js_get_str( el, "title" ), bufs );
+			strncpy( albums[index].title, js_get_str( el, "title" ), BUF_S );
 			photos_count += albums[index].size;
 		}
 	}
@@ -455,13 +464,16 @@ get_id( int argc, char ** argv, CURL * curl )
 				if ( argv[t][1] == 'g' )
 					group( argv[t+1], curl );
 				if ( argv[t][1] == 't' )
-				{/*
+				{
 					if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
 						strcat( TOKEN, argv[t+1] );
 					else
-						sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
-				*/
-					strcat( TOKEN, argv[t+1] );
+					{
+						if ( atoi( argv[t+1] ) == 0 )
+							sprintf( TOKEN, "%c", '\0' );
+						else
+							sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+					}
 				}
 				if ( argv[t][1] == 'n' )
 				{
@@ -526,6 +538,11 @@ get_id( int argc, char ** argv, CURL * curl )
 		return acc.id;
 	}
 
+	else
+	{
+		help_print();
+		return 1;
+	}
 	/* failure */
 	return 0;
 }
@@ -533,10 +550,10 @@ get_id( int argc, char ** argv, CURL * curl )
 void
 get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 {
-	char * url = malloc( bufs );
-	char * curpath = malloc( bufs );
-	char * alchar = malloc( bufs );
-	char * dirchar = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * curpath = malloc( BUF_S );
+	char * alchar = malloc( BUF_S );
+	char * dirchar = malloc( BUF_S );
 	unsigned i;
 
 	for( i = 0; i < arr_size; ++i )
@@ -609,7 +626,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 void
 get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long long post_id  )
 {
-	char * url = malloc( bufs );
+	char * url = malloc( BUF_S );
 
 	/* Loop start */
 	long long offset = 0;
@@ -677,10 +694,10 @@ void
 get_wall( char * idpath, CURL * curl )
 {
 	/* Char allocation */
-	char * url = malloc( bufs );
-	char * curpath = malloc( bufs );
-	char * posts_path = malloc( bufs );
-	char * attach_path = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * curpath = malloc( BUF_S );
+	char * posts_path = malloc( BUF_S );
+	char * attach_path = malloc( BUF_S );
 
 	sprintf( curpath, "%s/%s", idpath, DIRNAME_WALL );
 	sprintf( posts_path, "%s/%s", idpath, FILNAME_POSTS );
@@ -793,9 +810,9 @@ void
 get_docs( char * idpath, CURL * curl )
 {
 	/* char allocation */
-	char * url = malloc( bufs );
-	char * dirpath = malloc( bufs );
-	char * doc_path = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * dirpath = malloc( BUF_S );
+	char * doc_path = malloc( BUF_S );
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
@@ -846,8 +863,8 @@ get_docs( char * idpath, CURL * curl )
 void
 get_friends( char * idpath, CURL * curl )
 {
-	char * url = malloc( bufs );
-	char * outfl = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * outfl = malloc( BUF_S );
 
 	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
 	FILE * outptr = fopen( outfl, "w" );
@@ -893,8 +910,8 @@ get_friends( char * idpath, CURL * curl )
 void
 get_groups( char * idpath, CURL * curl )
 {
-	char * url = malloc( bufs );
-	char * outfl = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * outfl = malloc( BUF_S );
 
 	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
 	FILE * outptr = fopen( outfl, "w" );
@@ -941,9 +958,9 @@ get_groups( char * idpath, CURL * curl )
 void
 get_videos( char * idpath, CURL * curl )
 {
-	char * url = malloc( bufs );
-	char * dirpath = malloc( bufs );
-	char * vidpath = malloc( bufs );
+	char * url = malloc( BUF_S );
+	char * dirpath = malloc( BUF_S );
+	char * vidpath = malloc( BUF_S );
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
@@ -953,7 +970,7 @@ get_videos( char * idpath, CURL * curl )
 
 	/* creating log file with external links */
 	char * vid_log_path;
-	vid_log_path = malloc( bufs );
+	vid_log_path = malloc( BUF_S );
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
