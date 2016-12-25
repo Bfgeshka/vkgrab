@@ -13,6 +13,18 @@
 char TOKEN[BUF_S] = TOKEN_HEAD;
 
 void
+strncpy_safe( char * dst, const char * src, size_t n )
+{
+	if ( strlen( src ) <= n )
+		strncpy( dst, src, n );
+	else
+	{
+		strncpy( dst, src, n - 1 );
+		dst[n] = '\0';
+	}
+}
+
+void
 check_token()
 {
 	if ( strlen( TOKEN ) != strlen( CONST_TOKEN ) )
@@ -36,7 +48,7 @@ js_get_str( json_t * src, char * key )
 short
 user( char * name, CURL * curl )
 {
-	strncpy( acc.screenname, name, BUF_S/2 );
+	strcpy( acc.screenname, name );
 	acc.usr_ok = 0;
 
 	char * url = NULL;
@@ -69,8 +81,8 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	acc.id = js_get_int( el, "id" );
-	strncpy( acc.usr_fname, js_get_str( el, "first_name" ), BUF_S/2 );
-	strncpy( acc.usr_lname, js_get_str( el, "last_name" ), BUF_S/2 );
+	strncpy_safe( acc.usr_fname, js_get_str( el, "first_name" ), BUF_S/2 );
+	strncpy_safe( acc.usr_lname, js_get_str( el, "last_name" ), BUF_S/2 );
 
 	return acc.usr_ok;
 }
@@ -111,8 +123,8 @@ group( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
-	strncpy( acc.grp_name, js_get_str( el, "name" ), BUF_S/2 );
-	strncpy( acc.grp_type, js_get_str( el, "type" ), BUF_S/4 );
+	strncpy_safe( acc.grp_name, js_get_str( el, "name" ), BUF_S/2 );
+	strncpy_safe( acc.grp_type, js_get_str( el, "type" ), BUF_S/4 );
 
 	return acc.grp_ok;
 }
@@ -410,7 +422,7 @@ get_albums( CURL * curl )
 		{
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
-			strncpy( albums[index].title, js_get_str( el, "title" ), BUF_S );
+			strncpy_safe( albums[index].title, js_get_str( el, "title" ), BUF_S );
 			photos_count += albums[index].size;
 		}
 	}
