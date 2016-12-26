@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "../config.h"
-#include "curl_req.h"
 #include "methods.h"
 
 int
