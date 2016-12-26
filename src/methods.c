@@ -15,12 +15,12 @@ char TOKEN[BUF_S] = TOKEN_HEAD;
 void
 strncpy_safe( char * dst, const char * src, size_t n )
 {
-	if ( strlen( src ) <= n )
+	if ( strlen( src ) < n )
 		strncpy( dst, src, n );
 	else
 	{
 		strncpy( dst, src, n - 1 );
-		dst[n] = '\0';
+		dst[n-1] = '\0';
 	}
 }
 

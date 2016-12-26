@@ -6,7 +6,7 @@ OBJS = $(SRC:.c=.o)
 NAME = vkgrab
 PREFIX = /usr/local
 
-CFLAGS = -O3 -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE
+CFLAGS = -Os -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE
 LDFLAGS := $(shell pkg-config --libs jansson libcurl)
 
 all: clean options ${NAME}
