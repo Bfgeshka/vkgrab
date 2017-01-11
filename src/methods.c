@@ -364,7 +364,6 @@ api_request_pause()
 		puts( "Sleep error." );
 }
 
-
 size_t
 get_albums( CURL * curl )
 {
