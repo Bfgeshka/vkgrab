@@ -2,7 +2,7 @@
 #define FUNCTIONS_H_
 
 /* Point of interest */
-#define APPLICATION_ID 5521111
+#define APPLICATION_ID 55211111
 /* Add your constant access token after '=' */
 #define CONST_TOKEN "&access_token="
 
@@ -12,14 +12,14 @@
 /* Maximum num. of returned IDs per time in users.getSubscriptions. Default is 20, maximum is 200 */
 #define USER_SUBSCRIPTIONS_COUNT 200
 
-
+#define USLEEP_INT 300000
 
 #include <jansson.h>
 #include <curl/curl.h>
 
 
 #define API_VERSION "5.62"
-#define BUF_STRING 256
+#define BUF_STRING 512
 #define PERMISSIONS "offline"
 #define REQ_HEAD "https://api.vk.com/method"
 #define TOKEN_HEAD "&access_token="
@@ -51,6 +51,6 @@ size_t       crl_callback ( void *, size_t, size_t, void * );
 void         check_token  ( void );
 void         help_print   ( void );
 void         json_error   ( json_t * );
-
+void         api_request_pause ( void );
 
 #endif

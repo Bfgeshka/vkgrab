@@ -2,6 +2,8 @@
 #include <jansson.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 
 #include "functions.h"
 
@@ -173,30 +175,30 @@ group_id( int argc, char ** argv, CURL * curl )
 	json_t * json;
 	json_t * rsp;
 
-		sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld", \
-		        REQ_HEAD, API_VERSION, group.name_scrn, offset );
-		char * r = api_request( url, curl );
+	sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
+	         REQ_HEAD, API_VERSION, group.name_scrn, offset, TOKEN );
+	char * r = api_request( url, curl );
 
-		json = json_loads( r, 0, &json_err );
-		if ( !json )
-		{
-			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", \
-			        json_err.line, json_err.text );
-			return -2;
-		}
+	json = json_loads( r, 0, &json_err );
+	if ( !json )
+	{
+		fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", \
+		         json_err.line, json_err.text );
+		return -2;
+	}
 
-		rsp = json_object_get( json, "response" );
-		if (!rsp)
-		{
-			json_error( json );
-			return -3;
-		}
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
+	{
+		json_error( json );
+		return -3;
+	}
 
-		if ( offset == 0 )
-		{
-			group.sub_count = js_get_int( rsp, "count" );
-			printf( "Subscribers count: %lld\n", group.sub_count );
-		}
+	if ( offset == 0 )
+	{
+		group.sub_count = js_get_int( rsp, "count" );
+		printf( "Subscribers count: %lld\n", group.sub_count );
+	}
 
 	return 1;
 }
@@ -216,14 +218,14 @@ group_memb( CURL * curl, long long * ids )
 	do
 	{
 		sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
-		        REQ_HEAD, API_VERSION, group.name_scrn, offset, TOKEN );
+		         REQ_HEAD, API_VERSION, group.name_scrn, offset, TOKEN );
 		char * r = api_request( url, curl );
 
 		json = json_loads( r, 0, &json_err );
 		if ( !json )
 		{
 			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", \
-			        json_err.line, json_err.text );
+			         json_err.line, json_err.text );
 			return -2;
 		}
 
@@ -256,7 +258,7 @@ json_error( json_t * json )
 	err_block = json_object_get( json, "error" );
 	if ( err_block )
 		fprintf( stderr, "Requst error %lld: %s\n", \
-		        js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
+		         js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
 
 }
 
@@ -279,37 +281,44 @@ user_subs( long long id, CURL * curl, char * output_file )
 
 	/* Requesting data */
 	char url[BUF_STRING];
+	char sub_scrname[BUF_STRING];
+	char sub_name[BUF_STRING];
 	json_error_t json_err;
-	json_t * json;
-	json_t * rsp;
+	json_t * json_;
+	json_t * rsp_;
 	size_t index;
-	FILE * logfile = fopen( output_file, "w" );
+
 
 	sprintf( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name%s", \
 	         REQ_HEAD, API_VERSION, id, TOKEN );
 	char * rr = api_request( url, curl );
 
-	json = json_loads( rr, 0, &json_err );
-	if ( !json )
+	json_ = json_loads( rr, 0, &json_err );
+	if ( !json_ )
 	{
-		fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", \
+		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", \
 		         json_err.line, json_err.text );
 		return -2;
 	}
 
-	rsp = json_object_get( json, "response" );
-	if (!rsp)
+	rsp_ = json_object_get( json_, "response" );
+	if (!rsp_)
 	{
-		json_error( json );
+		json_error( json_ );
 		return -3;
 	}
 
-	fprintf( logfile, "%s:\"%s %s\"\n\n", js_get_str( rsp, "screen_name" ), js_get_str( rsp, "first_name" ), js_get_str( rsp, "last_name" ) );
+	FILE * logfile = fopen( output_file, "w" );
+	json_ = json_array_get( rsp_, 0 );
+	fprintf( logfile, "%s:\"%s %s\"\n\n", js_get_str( json_, "screen_name" ), js_get_str( json_, "first_name" ), js_get_str( json_, "last_name" ) );
 
 	do
 	{
-		sprintf( url, "%s/users.getSubscriptions?v=%s&user_id=%lld&offset=%ld&extended=1%s", \
-		         REQ_HEAD, API_VERSION, id, offset, TOKEN );
+		json_t * json;
+		json_t * rsp;
+		sprintf( url, "%s/groups.get?v=%s&user_id=%lld&offset=%ld&extended=1%s&count=%d", \
+		         REQ_HEAD, API_VERSION, id, offset, TOKEN, USER_SUBSCRIPTIONS_COUNT );
+		api_request_pause();
 		char * r = api_request( url, curl );
 
 		json = json_loads( r, 0, &json_err );
@@ -336,12 +345,22 @@ user_subs( long long id, CURL * curl, char * output_file )
 		json = json_object_get( rsp, "items" );
 		json_array_foreach( json, index, rsp )
 		{
-			fprintf( logfile, "%s:\"%s\"", js_get_str( rsp, "screen_name" ), js_get_str( rsp, "name" ) );
+			sprintf( sub_scrname, js_get_str( rsp, "screen_name" ) );
+			sprintf( sub_name, js_get_str( rsp, "name" ) );
+			fprintf( logfile, "%s:::\"%s\"\n", sub_scrname, sub_name );
 		}
 
 		offset +=USER_SUBSCRIPTIONS_COUNT;
+
 	}
 	while ( count > offset );
 
 	return 0;
+}
+
+void
+api_request_pause()
+{
+	if ( usleep( ( unsigned int ) USLEEP_INT ) != 0 )
+		puts( "Sleep error." );
 }
