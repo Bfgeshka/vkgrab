@@ -211,8 +211,7 @@ group_memb( CURL * curl, long long * ids )
 	/* Requesting data */
 	char url[BUF_STRING];
 	json_error_t json_err;
-	json_t * json;
-	json_t * rsp;
+
 	size_t index;
 
 	do
@@ -220,6 +219,7 @@ group_memb( CURL * curl, long long * ids )
 		sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
 		         REQ_HEAD, API_VERSION, group.name_scrn, offset, TOKEN );
 		char * r = api_request( url, curl );
+		json_t * json;
 
 		json = json_loads( r, 0, &json_err );
 		if ( !json )
@@ -228,7 +228,7 @@ group_memb( CURL * curl, long long * ids )
 			         json_err.line, json_err.text );
 			return -2;
 		}
-
+		json_t * rsp;
 		rsp = json_object_get( json, "response" );
 		if (!rsp)
 		{
@@ -284,8 +284,8 @@ user_subs( long long id, CURL * curl, char * output_file )
 	char sub_scrname[BUF_STRING];
 	char sub_name[BUF_STRING];
 	json_error_t json_err;
-	json_t * json_;
-	json_t * rsp_;
+	json_t * json;
+	json_t * rsp;
 	size_t index;
 
 
@@ -293,29 +293,27 @@ user_subs( long long id, CURL * curl, char * output_file )
 	         REQ_HEAD, API_VERSION, id, TOKEN );
 	char * rr = api_request( url, curl );
 
-	json_ = json_loads( rr, 0, &json_err );
-	if ( !json_ )
+	json = json_loads( rr, 0, &json_err );
+	if ( !json )
 	{
 		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", \
 		         json_err.line, json_err.text );
 		return -2;
 	}
 
-	rsp_ = json_object_get( json_, "response" );
-	if (!rsp_)
+	rsp = json_object_get( json, "response" );
+	if (!rsp)
 	{
-		json_error( json_ );
+		json_error( json );
 		return -3;
 	}
 
 	FILE * logfile = fopen( output_file, "w" );
-	json_ = json_array_get( rsp_, 0 );
-	fprintf( logfile, "%s:\"%s %s\"\n\n", js_get_str( json_, "screen_name" ), js_get_str( json_, "first_name" ), js_get_str( json_, "last_name" ) );
+	json = json_array_get( rsp, 0 );
+	fprintf( logfile, "%s:\"%s %s\"\n\n", js_get_str( json, "screen_name" ), js_get_str( json, "first_name" ), js_get_str( json, "last_name" ) );
 
 	do
 	{
-		json_t * json;
-		json_t * rsp;
 		sprintf( url, "%s/groups.get?v=%s&user_id=%lld&offset=%ld&extended=1%s&count=%d", \
 		         REQ_HEAD, API_VERSION, id, offset, TOKEN, USER_SUBSCRIPTIONS_COUNT );
 		api_request_pause();
@@ -355,6 +353,7 @@ user_subs( long long id, CURL * curl, char * output_file )
 	}
 	while ( count > offset );
 
+	fclose( logfile );
 	return 0;
 }
 

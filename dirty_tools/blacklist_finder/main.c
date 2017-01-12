@@ -4,6 +4,10 @@
 
 #include "./functions.h"
 
+/*
+ * cc ./main.c ./functions.c -O2 -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE -ljansson -lcurl -o blacklist_finder
+ */
+
 int
 main( int argc, char ** argv )
 {
@@ -52,6 +56,6 @@ main( int argc, char ** argv )
 
 	}
 
-
+	curl_easy_cleanup(curl);
 	return 0;
 }
