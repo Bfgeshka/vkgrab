@@ -211,6 +211,8 @@ group_memb( CURL * curl, long long * ids )
 	/* Requesting data */
 	char url[BUF_STRING];
 	json_error_t json_err;
+	json_t * json;
+	json_t * rsp;
 
 	size_t index;
 
@@ -218,17 +220,15 @@ group_memb( CURL * curl, long long * ids )
 	{
 		sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
 		         REQ_HEAD, API_VERSION, group.name_scrn, offset, TOKEN );
-		char * r = api_request( url, curl );
-		json_t * json;
 
-		json = json_loads( r, 0, &json_err );
+		json = json_loads( api_request(url, curl), 0, &json_err );
 		if ( !json )
 		{
 			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", \
 			         json_err.line, json_err.text );
 			return -2;
 		}
-		json_t * rsp;
+
 		rsp = json_object_get( json, "response" );
 		if (!rsp)
 		{
@@ -250,7 +250,6 @@ group_memb( CURL * curl, long long * ids )
 }
 
 
-
 void
 json_error( json_t * json )
 {
@@ -262,6 +261,7 @@ json_error( json_t * json )
 
 }
 
+
 void
 help_print()
 {
@@ -272,6 +272,7 @@ help_print()
 	puts("  -T             generate link for getting a token");
 	puts("  -t TOKEN       give a valid token without header \"&access_token=\". If TOKEN is zero then anonymous access given");
 }
+
 
 int
 user_subs( long long id, CURL * curl, char * output_file )
@@ -288,12 +289,10 @@ user_subs( long long id, CURL * curl, char * output_file )
 	json_t * rsp;
 	size_t index;
 
-
 	sprintf( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name%s", \
 	         REQ_HEAD, API_VERSION, id, TOKEN );
-	char * rr = api_request( url, curl );
 
-	json = json_loads( rr, 0, &json_err );
+	json = json_loads( api_request( url, curl ), 0, &json_err );
 	if ( !json )
 	{
 		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", \
@@ -317,9 +316,8 @@ user_subs( long long id, CURL * curl, char * output_file )
 		sprintf( url, "%s/groups.get?v=%s&user_id=%lld&offset=%ld&extended=1%s&count=%d", \
 		         REQ_HEAD, API_VERSION, id, offset, TOKEN, USER_SUBSCRIPTIONS_COUNT );
 		api_request_pause();
-		char * r = api_request( url, curl );
 
-		json = json_loads( r, 0, &json_err );
+		json = json_loads( api_request( url, curl ), 0, &json_err );
 		if ( !json )
 		{
 			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", \
@@ -337,7 +335,7 @@ user_subs( long long id, CURL * curl, char * output_file )
 		if ( offset == 0 )
 		{
 			count = (long) js_get_int( rsp, "count" );
-			printf( "User is subscribed to %ld pages\n", count );
+			printf( "UID %lld is subscribed to %ld pages.", id, count );
 		}
 
 		json = json_object_get( rsp, "items" );

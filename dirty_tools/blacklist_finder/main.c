@@ -50,7 +50,7 @@ main( int argc, char ** argv )
 	long long i;
 	for ( i = 0; i < group.sub_count; ++i )
 	{
-		printf( "[%7lld/%7lld] ", i + 1, group.sub_count );
+		printf( "\n[%7lld/%7lld] ", i + 1, group.sub_count );
 		sprintf( output_file, "%s/u_%lld", output_dir, ids[i] );
 		user_subs( ids[i], curl, output_file );
 
