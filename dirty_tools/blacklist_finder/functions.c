@@ -335,7 +335,7 @@ user_subs( long long id, CURL * curl, char * output_file )
 		if ( offset == 0 )
 		{
 			count = (long) js_get_int( rsp, "count" );
-			printf( "UID %lld is subscribed to %ld pages.", id, count );
+			printf( "UID %10lld is subscribed to %ld pages.", id, count );
 		}
 
 		json = json_object_get( rsp, "items" );

@@ -12,6 +12,7 @@ int
 main( int argc, char ** argv )
 {
 	CURL * curl;
+	curl_global_init(CURL_GLOBAL_SSL);
 	curl = curl_easy_init();
 	if ( !curl )
 	{
@@ -57,5 +58,6 @@ main( int argc, char ** argv )
 	}
 
 	curl_easy_cleanup(curl);
+	curl_global_cleanup();
 	return 0;
 }

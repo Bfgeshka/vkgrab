@@ -1,8 +1,12 @@
 # В файле не должно быть пустых строк.
-# Для правильного совпадения записи должны начинаться с "^" и оканчиваться на ":"
+# Для правильного совпадения записи должны начинаться с "^" и оканчиваться на ":" (чтобы не находить фрагменты).
+^4chan:
 ^13studiya:
 ^anti_maydan:
+^army_sila:
+^bageto:
 ^bezopasnyjinternet:
+^bugurt_thread:
 ^childsafetyontheinternet:
 ^chistoe_detsvo:
 ^clear_runet:
@@ -14,10 +18,17 @@
 ^club44818900:
 ^club54267078:
 ^club116141380:
+^cunbers:
 ^cyberchel:
 ^cyberdrugtver:
 ^cyber_smol:
+^degradination:
+^degromusley:
+^eblan_kingdom:
+^fadmen:
+^fletchan:
 ^genprocrf:
+^jut_su:
 ^kiberdruzhina_ru:
 ^kiberdruzhina_sk:
 ^kiberdruzhin.oskol:
@@ -25,17 +36,25 @@
 ^kiberdryzina_omsk:
 ^kiberpatrul:
 ^kiberrt:
+^lifeontv:
 ^liga:
 ^mediagvardia:
+^memesjutsu:
 ^mindclean:
 ^molgvardiya:
+^naruto_4ch:
+^notbabies:
 ^parentchannel:
+^profitpub:
 ^proverenomamoy:
 ^pycckoe_no_pyccku:
+^rhymes:
+^rrofll:
 ^rusproekt1:
 ^russ_great:
 ^rvs_group:
 ^safeinetforkids:
+^this_user_is_me:
 ^vmgere:
 ^vozrojdenie_nravstvennosti:
 ^whatisgood2:
