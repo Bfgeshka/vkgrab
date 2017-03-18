@@ -39,12 +39,11 @@ utf8_char_offset( const char * input )
 size_t
 crl_callback( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 {
-	/* curl has strange ways, pretty often they can do it better */
 	size_t rsize = wk_nmemb * wk_size;
 	struct crl_st * p = ( struct crl_st * ) upoint;
 
 	/* allocation for new size */
-	p->payload = ( char * ) realloc( p->payload, p->size + rsize + 1 );
+	p->payload = realloc( p->payload, p->size + rsize + 1 );
 	if ( p->payload == NULL )
 	{
 		fprintf( stderr, "Reallocation failed in crl_callback()\n" );
@@ -63,8 +62,6 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 {
 	CURLcode code;
 
-	fetch_str->size = 0;
-	fetch_str->payload = ( char * ) calloc( 1, sizeof( fetch_str->payload ) );
 	if ( fetch_str->payload == NULL )
 	{
 		fprintf( stderr, "Allocation failed in crl_fetch()\n" );
@@ -91,13 +88,13 @@ write_file( void * ptr, size_t size, size_t nmemb, FILE * stream )
 }
 
 
-char *
-vk_get_request( const char * url, CURL * hc )
+void
+vk_get_request( const char * url, CURL * hc, struct crl_st * cf )
 {
 	/* struct initialiisation */
 	CURLcode code;
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
+	cf->size = 0;
+	cf->payload = malloc(0);
 
 	/* fetching an answer */
 	code = crl_fetch( hc, url, cf );
@@ -105,17 +102,11 @@ vk_get_request( const char * url, CURL * hc )
 
 	/* checking result */
 	if ( code != CURLE_OK || cf->size < 1 )
-	{
 		fprintf( stderr, "GET error: %s\n", curl_easy_strerror( code ) );
-		return "err2";
-	}
 	if ( !cf->payload )
-	{
 		fprintf( stderr, "Callback is empty, nothing to do here\n" );
-		return "err3";
-	}
 
-	return cf->payload;
+/*	return cf;*/
 }
 
 int

@@ -14,7 +14,7 @@
  * Choose 'settings', and there you can see your application id.
  * Copy it and replace value of APPLICATION_ID.
  */
-#define APPLICATION_ID 0000000
+#define APPLICATION_ID 5525624
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -78,11 +78,11 @@
  * Use 'offline' permission if you want permanent token. Be careful with it.
  * You can add your permanent token after '=' in CONST_TOKEN string.
  */
-#define permissions "video,docs,photos"
+#define permissions "video,docs,photos,offline"
 #define TOKEN_HEAD "&access_token="
-#define CONST_TOKEN "&access_token="
+#define CONST_TOKEN "&access_token=331b14739333ad8cb26b1c24894e527020f55c0a4ca005912211f219c5231b1dba06b7cbffcffbf20a5bb"
 
 /* Currently used api version */
-#define api_ver "5.60"
+#define api_ver "5.62"
 
 #endif
