@@ -471,90 +471,75 @@ get_id( int argc, char ** argv, CURL * curl )
 	acc.grp_ok = 1;
 	int t;
 
-	if ( argc == 1 )
+	switch( argc )
 	{
-		help_print();
-		return 0;
-	}
+		case 1: help_print(); return 0;
 
-	else if ( argc == 2 )
-	{
-		if ( argv[1][0] == '-' )
-		{
-			if ( argv[1][1] == 'h' )
-				help_print();
-			else if ( argv[1][1] == 'T' )
-				printf( "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
-				        APPLICATION_ID, permissions );
-			return 0;
-		}
-		else
-		{
-			user( argv[1], curl );
-			group( argv[1], curl );
-		}
+		case 2:
+			if ( argv[1][0] == '-' )
+				switch( argv[1][1] )
+				{
+					case 'h': help_print(); return 0;
+					case 'T': printf( "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
+									   APPLICATION_ID, permissions ); return 0;
+					default:  puts( "Invalid argument." ); return 0;
+				}
+			else
+			{
+				user( argv[1], curl );
+				if ( acc.usr_ok != 0 )
+					group( argv[1], curl );
+			}
+			break;
+
+		default:
+			for ( t = 0; t < argc; ++t )
+			{
+				if ( argv[t][0] == '-' )
+					switch( argv[t][1] )
+					{
+						case 'u': user( argv[t+1], curl ); break;
+						case 'g': group( argv[t+1], curl ); break;
+						case 't':
+							if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
+								strcat( TOKEN, argv[t+1] );
+							else
+							{ /* Anonymous access */
+								if ( atoi( argv[t+1] ) == 0 )
+									sprintf( TOKEN, "%c", '\0' );
+								else
+									sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+							}
+							break;
+						case 'n':
+							switch( argv[t][2] )
+							{
+								case 'p': types.pictr = 0; break;
+								case 'd': types.docmt = 0; break;
+								case 'v': types.video = 0; break;
+								default:  help_print(); return 0;
+							}
+							break;
+						case 'y':
+							switch( argv[t][2] )
+							{
+								case 'p': types.pictr = 1; break;
+								case 'd': types.docmt = 1; break;
+								case 'v': types.video = 1; break;
+								default:  help_print(); return 0;
+							}
+							break;
+						case 'h': help_print(); return 0;
+						default:  puts( "Invalid argument." ); return 0;
+					}
+				if ( ( t == argc - 1 ) && ( acc.usr_ok == 1 ) && ( acc.grp_ok == 1 ) )
+				{
+					user( argv[t], curl );
+					group( argv[t], curl );
+				}
+			}
+			break;
 	}
-	else
-		for ( t = 0; t < argc; ++t )
-		{
-			if ( argv[t][0] == '-' )
-			{
-				if ( argv[t][1] == 'u' )
-					user( argv[t+1], curl );
-				if ( argv[t][1] == 'g' )
-					group( argv[t+1], curl );
-				if ( argv[t][1] == 't' )
-				{
-					if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
-						strcat( TOKEN, argv[t+1] );
-					else
-					{
-						if ( atoi( argv[t+1] ) == 0 )
-							sprintf( TOKEN, "%c", '\0' );
-						else
-							sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
-					}
-				}
-				if ( argv[t][1] == 'n' )
-				{
-					if ( argv[t][2] == 'p' )
-						types.pictr = 0;
-					else if ( argv[t][2] == 'd' )
-						types.docmt = 0;
-					else if ( argv[t][2] == 'v' )
-						types.video = 0;
-					else
-					{
-						help_print();
-						return 0;
-					}
-				}
-				if ( argv[t][1] == 'y' )
-				{
-					if ( argv[t][2] == 'p' )
-						types.pictr = 1;
-					else if ( argv[t][2] == 'd' )
-						types.docmt = 1;
-					else if ( argv[t][2] == 'v' )
-						types.video = 1;
-					else
-					{
-						help_print();
-						return 0;
-					}
-				}
-				if ( argv[t][1] == 'h' )
-				{
-					help_print();
-					return 0;
-				}
-			}
-			if ( ( t == argc - 1 ) && ( acc.usr_ok == 1 ) && ( acc.grp_ok == 1 ) )
-			{
-				user( argv[t], curl );
-				group( argv[t], curl );
-			}
-		}
 
 	/* Info out */
 	if ( acc.grp_ok == 0 )
@@ -603,16 +588,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				struct crl_st wk_crl_st;
 				struct crl_st * cf = &wk_crl_st;
 
-				/* common names for service albums
-				if ( albums[i].aid == -6 )
-					sprintf( alchar, DIRNAME_ALB_PROF );
-				else if ( albums[i].aid == -7 )
-					sprintf( alchar, DIRNAME_ALB_WALL );
-				else if ( albums[i].aid == -15 )
-					sprintf( alchar, DIRNAME_ALB_SAVD );
-				else
-					sprintf( alchar, "alb_%lld_(%u:%zu)_(%lld:p)_(%s)", albums[i].aid, i + 1, arr_size, albums[i].size, albums[i].title );
-				*/
+				/* common names for service albums */
 				switch( albums[i].aid )
 				{
 					case  -6: sprintf( alchar, DIRNAME_ALB_PROF ); break;
@@ -911,7 +887,7 @@ get_docs( char * idpath, CURL * curl )
 	if ( r != NULL )
 		free(r);
 	if ( !json )
-		fprintf( stderr, "JSON docs.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		fprintf( stderr, "JSON docs.get parsing error:\n%d:%s\n", json_err.line, json_err.text );
 
 	/* finding response */
 	json_t * rsp;
