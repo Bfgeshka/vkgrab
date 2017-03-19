@@ -54,7 +54,6 @@ user( char * name, CURL * curl )
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
 	char * url = malloc(BUF_S);
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
 	sprintf( url, "https://api.vk.com/method/users.get?user_ids=%s&v=%s", name, api_ver );
 	vk_get_request( url, curl, cf );
 	char * r = malloc(cf->size+1);
@@ -105,7 +104,6 @@ group( char * name, CURL * curl )
 	sprintf( url, "https://api.vk.com/method/groups.getById?v=%s&group_id=%s", api_ver, name );
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
 	vk_get_request( url, curl, cf );
 	char * r = malloc(cf->size+1);
 	sprintf(r, "%s", cf->payload);
@@ -164,7 +162,7 @@ dl_photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE 
 	json_t * biggest;
 
 	pid = js_get_int( photo_el, "id" );
-	if ( post_id > 0 )
+	if ( post_id > 0 && log != NULL )
 	{
 		if ( comm_id > 0 )
 			fprintf( log, "COMMENT %lld: ATTACH: PHOTO %lld\n", comm_id, pid);
@@ -397,7 +395,6 @@ get_albums( CURL * curl )
 	         acc.id, TOKEN, api_ver, addit_request );
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
 	vk_get_request( url, curl, cf );
 	char * r = malloc(cf->size+1);
 	sprintf(r, "%s", cf->payload);
@@ -603,7 +600,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				else if ( albums[i].aid == -15 )
 					sprintf( alchar, DIRNAME_ALB_SAVD );
 				else
-					sprintf( alchar, "%lld[%s]", albums[i].aid, albums[i].title );
+					sprintf( alchar, "alb_%lld_(%u:%zu)_(%lld:p)_(%s)", albums[i].aid, i + 1, arr_size, albums[i].size, albums[i].title );
 
 				/* creating request */
 				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
@@ -644,7 +641,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				items = json_object_get( rsp, "items" );
 				json_array_foreach( items, index, el )
 				{
-					dl_photo( dirchar, curpath, el, curl, NULL, -1, -1 );
+					dl_photo( dirchar, curpath, el, curl, NULL, (long long) index + offset * LIMIT_A + 1, -1 );
 				}
 
 				json_decref(json);
@@ -801,7 +798,6 @@ get_wall( char * idpath, CURL * curl )
 			long long p_date = js_get_int( el, "date" );
 			fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, p_date, js_get_str( el, "text" ) );
 
-
 			/* Searching for attachments */
 			json_t * att_json;
 			att_json = json_object_get( el, "attachments" );
@@ -855,7 +851,6 @@ get_wall( char * idpath, CURL * curl )
 	free(url);
 	free(curpath);
 	free(attach_path);
-
 	fclose(posts);
 }
 
@@ -876,7 +871,6 @@ get_docs( char * idpath, CURL * curl )
 	sprintf( url, "https://api.vk.com/method/docs.get?owner_id=%lld%s&v=%s", acc.id, TOKEN, api_ver );
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
 	vk_get_request( url, curl, cf );
 	char * r = malloc(cf->size+1);
 	sprintf(r, "%s", cf->payload);
@@ -933,7 +927,6 @@ get_friends( char * idpath, CURL * curl )
 	         acc.id, TOKEN, api_ver );
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
 	vk_get_request( url, curl, cf );
 	char * r = malloc(cf->size+1);
 	sprintf(r, "%s", cf->payload);
@@ -987,7 +980,6 @@ get_groups( char * idpath, CURL * curl )
 	         acc.id, TOKEN, api_ver );
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
 	vk_get_request( url, curl, cf );
 	char * r = malloc(cf->size+1);
 	sprintf(r, "%s", cf->payload);
@@ -1035,9 +1027,8 @@ get_videos( char * idpath, CURL * curl )
 	char * url = malloc(BUF_S);
 	char * dirpath = malloc( BUF_S );
 	char * vidpath = malloc( BUF_S );
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
-	/*cf->payload = calloc(1, sizeof(cf->payload));*/
+	long long vid_count = 0;
+
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
@@ -1050,8 +1041,6 @@ get_videos( char * idpath, CURL * curl )
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
-	long long vid_count = 0;
-
 	/* Loop init */
 	int offset = 0;
 	int times = 0;
@@ -1060,12 +1049,13 @@ get_videos( char * idpath, CURL * curl )
 		/* creating request */
 		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
 		         acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, api_ver );
-
+		struct crl_st wk_crl_st;
+		struct crl_st * cf = &wk_crl_st;
 		vk_get_request( url, curl, cf );
 		char * r = malloc(cf->size+1);
 		sprintf(r, "%s", cf->payload);
 		r[cf->size] = 0;
-
+		if ( cf->payload != NULL ) free(cf->payload);
 
 		/* JSON init */
 		json_t * json;
@@ -1105,7 +1095,6 @@ get_videos( char * idpath, CURL * curl )
 		times = vid_count / LIMIT_V;
 	}
 
-	if ( cf->payload != NULL ) free(cf->payload);
 	free( dirpath );
 	free( vid_log_path );
 	free( vidpath );

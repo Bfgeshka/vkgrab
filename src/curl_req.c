@@ -72,9 +72,6 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 	curl_easy_setopt( hc, CURLOPT_WRITEFUNCTION, crl_callback );
 	curl_easy_setopt( hc, CURLOPT_WRITEDATA, ( void * ) fetch_str );
 	curl_easy_setopt( hc, CURLOPT_USERAGENT, "libcurl-agent/1.0" );
-	/*	curl_easy_setopt( hc, CURLOPT_TIMEOUT, 5 );
-		curl_easy_setopt( hc, CURLOPT_FOLLOWLOCATION, 1 );
-		curl_easy_setopt( hc, CURLOPT_MAXREDIRS, 1 );	*/
 	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
 	code = curl_easy_perform( hc );
 	return code;
@@ -86,7 +83,6 @@ write_file( void * ptr, size_t size, size_t nmemb, FILE * stream )
 	size_t written = fwrite( ptr, size, nmemb, stream );
 	return written;
 }
-
 
 void
 vk_get_request( const char * url, CURL * hc, struct crl_st * cf )
@@ -105,8 +101,6 @@ vk_get_request( const char * url, CURL * hc, struct crl_st * cf )
 		fprintf( stderr, "GET error: %s\n", curl_easy_strerror( code ) );
 	if ( !cf->payload )
 		fprintf( stderr, "Callback is empty, nothing to do here\n" );
-
-/*	return cf;*/
 }
 
 int
@@ -198,7 +192,6 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		unsigned term_width = get_width();
 		/* skip downloading if file exists */
 		errno = 0;
-		struct stat fst;
 		long long file_size = 0;
 		int err;
 		FILE * fr = fopen( filepath, "r" );
@@ -206,6 +199,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 		if ( fr != NULL )
 		{
 			fclose( fr );
+			struct stat fst;
 			if (stat( filepath, &fst ) != -1 )
 				file_size = (long long) fst.st_size;
 
@@ -249,7 +243,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			while ( spaces_offset > 0 )
 			{
 				--spaces_offset;
-				putchar( ' ' );
+				putchar(' ');
 			}
 			printf( "\b\b\b\b\b\b\b\033[01;32m[OK]\033[00m\n" );
 
