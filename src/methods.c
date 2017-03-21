@@ -23,6 +23,9 @@ readable_date( long long epoch, FILE * log )
 	piped = popen( date_invoke, "r" );
 	if ( fgets( date_result, BUFSIZ, piped ) == NULL )
 	{
+		if ( piped != NULL )
+			fclose(piped);
+
 		sprintf( date_result, "date get failed" );
 		return -1;
 	}

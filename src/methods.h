@@ -39,7 +39,7 @@ long long photos_count;
 struct data_album * albums;
 
 const char * js_get_str        ( json_t *, char * );
-int          readable_date     ( long long, FILE * )
+int          readable_date     ( long long, FILE * );
 long long    get_id            ( int, char **, CURL * );
 long long    js_get_int        ( json_t *, char * );
 short        group             ( char *, CURL * );
