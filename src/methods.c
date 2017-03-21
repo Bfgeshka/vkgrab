@@ -12,6 +12,27 @@
 
 char TOKEN[BUF_S] = TOKEN_HEAD;
 
+int
+readable_date( long long epoch, FILE * log )
+{
+	char date_invoke[BUFSIZ];
+	char date_result[BUFSIZ];
+	sprintf( date_invoke, "date --date='@%lld'", epoch );
+
+	FILE * piped;
+	piped = popen( date_invoke, "r" );
+	if ( fgets( date_result, BUFSIZ, piped ) == NULL )
+	{
+		sprintf( date_result, "date get failed" );
+		return -1;
+	}
+
+	fclose(piped);
+	fprintf( log, "DATE: %s", date_result );
+
+	return 0;
+}
+
 void
 strncpy_safe( char * dst, const char * src, size_t n )
 {
@@ -710,8 +731,15 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 		json_array_foreach( items, index, el )
 		{
 			long long c_id = js_get_int( el, "id" );
-			fprintf( logfile, "COMMENT %lld: EPOCH: %lld\nCOMMENT %lld: TEXT:\n%s\n",
-			         c_id, js_get_int( el, "date" ), c_id, js_get_str( el, "text" ) );
+			long long epoch = js_get_int( el, "date" );
+
+			fprintf( logfile, "COMMENT %lld: EPOCH: %lld ", c_id, epoch  );
+			if ( types.ldate == 1 )
+				if ( readable_date( epoch, logfile ) != 0 )
+					types.ldate = 0;
+
+			fprintf( logfile, "COMMENT %lld: TEXT: %s\n-~-~-~-~-~-~\n",
+			         c_id, js_get_str( el, "text" ) );
 
 			/* Searching for attachments */
 			json_t * att_json;
@@ -799,7 +827,14 @@ get_wall( char * idpath, CURL * curl )
 		json_array_foreach( items, index, el )
 		{
 			long long p_id = js_get_int( el, "id" );
-			fprintf( posts, "ID: %lld\nEPOCH: %lld\nTEXT: %s\n", p_id, js_get_int( el, "date" ), js_get_str( el, "text" ) );
+			long long epoch = js_get_int( el, "date" );
+
+			fprintf( posts, "ID: %lld\n", p_id );
+			if ( types.ldate == 1 )
+				if ( readable_date( epoch, posts ) != 0 )
+					types.ldate = 0;
+
+			fprintf( posts, "EPOCH: %lld\nTEXT: %s\n", epoch, js_get_str( el, "text" ) );
 
 			/* Searching for attachments */
 			json_t * att_json;

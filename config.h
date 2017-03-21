@@ -14,7 +14,7 @@
  * Choose 'settings', and there you can see your application id.
  * Copy it and replace value of APPLICATION_ID.
  */
-#define APPLICATION_ID 5525624
+#define APPLICATION_ID 5932348
 
 /* 1L - verbose curl connection, 0L - silent */
 #define CRL_VERBOSITY 0L
@@ -49,7 +49,7 @@
 #define TMP_CURL_FILENAME "/tmp/vkgrab.tmp"
 
 /* Dividing string between posts in FILNAME_POSTS */
-#define LOG_POSTS_DIVIDER "-~-~-~\n~-~-~-\n\n"
+#define LOG_POSTS_DIVIDER "-~-~-~-~-~-~\n~-~-~-~-~-~-\n\n"
 
 /* Sometimes program runs too fast and VK returns errors because of too often api requests.
  * This timer slows program down before making a request. It wouldn't be applied to file downloading.
@@ -66,6 +66,7 @@
 #define DOGET_DOC 1
 #define DOGET_PIC 1
 #define DOGET_COM 1
+#define DOGET_DTE 1
 
 /* Size for usual string. */
 #define BUF_S 512
@@ -80,7 +81,7 @@
  */
 #define permissions "video,docs,photos,offline"
 #define TOKEN_HEAD "&access_token="
-#define CONST_TOKEN "&access_token=331b14739333ad8cb26b1c24894e527020f55c0a4ca005912211f219c5231b1dba06b7cbffcffbf20a5bb"
+#define CONST_TOKEN "&access_token=26eaa951a1d0eae05b4f077cfea5b"
 
 /* Currently used api version */
 #define api_ver "5.62"

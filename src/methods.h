@@ -32,13 +32,14 @@ struct control_datatypes
 	short pictr;
 	short video;
 	short comts;
+	short ldate;
 } types;
 
 long long photos_count;
 struct data_album * albums;
 
-
 const char * js_get_str        ( json_t *, char * );
+int          readable_date     ( long long, FILE * )
 long long    get_id            ( int, char **, CURL * );
 long long    js_get_int        ( json_t *, char * );
 short        group             ( char *, CURL * );
@@ -59,5 +60,6 @@ void         get_videos        ( char *, CURL * );
 void         get_wall          ( char *, CURL * );
 void         help_print        ( void );
 void         parse_attachments ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
+
 
 #endif

@@ -26,6 +26,7 @@ main( int argc, char ** argv )
 	types.pictr = DOGET_PIC;
 	types.video = DOGET_VID;
 	types.comts = DOGET_COM;
+	types.ldate = DOGET_DTE;
 
 	/* Checking id */
 	check_token();
