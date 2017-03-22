@@ -35,8 +35,8 @@ main( int argc, char ** argv )
 		return 2;
 
 	/* Naming file metadata */
-	char output_dir[BUF_S];
-	char name_descript[BUF_S];
+	char output_dir[BUFSIZ];
+	char name_descript[BUFSIZ];
 	if ( acc.usr_ok == 0 )
 	{
 		sprintf( output_dir, "u_%lld", acc.id );
@@ -58,7 +58,7 @@ main( int argc, char ** argv )
 	if ( mkdir( output_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
-	char name_dsc_path[BUF_S];
+	char name_dsc_path[BUFSIZ];
 	sprintf( name_dsc_path, "%s/%s", output_dir, FILNAME_IDNAME );
 	FILE * u_name = fopen( name_dsc_path, "w" );
 	fprintf( u_name, "%s", name_descript );

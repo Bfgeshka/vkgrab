@@ -10,7 +10,7 @@
 #include "methods.h"
 #include "curl_req.h"
 
-char TOKEN[BUF_S] = TOKEN_HEAD;
+char TOKEN[BUFSIZ] = TOKEN_HEAD;
 
 int
 readable_date( long long epoch, FILE * log )
@@ -77,7 +77,7 @@ user( char * name, CURL * curl )
 	strcpy( acc.screenname, name );
 	acc.usr_ok = 0;
 
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	sprintf( url, "https://api.vk.com/method/users.get?user_ids=%s&v=%s", name, api_ver );
 	vk_get_request( url, curl, cf );
 	free(url);
@@ -115,8 +115,8 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	acc.id = js_get_int( el, "id" );
-	strncpy_safe( acc.usr_fname, js_get_str( el, "first_name" ), BUF_S/2 );
-	strncpy_safe( acc.usr_lname, js_get_str( el, "last_name" ), BUF_S/2 );
+	strncpy_safe( acc.usr_fname, js_get_str( el, "first_name" ), BUFSIZ/2 );
+	strncpy_safe( acc.usr_lname, js_get_str( el, "last_name" ), BUFSIZ/2 );
 
 	json_decref(json);
 	return acc.usr_ok;
@@ -130,7 +130,7 @@ group( char * name, CURL * curl )
 	acc.grp_ok = 0;
 	strcpy( acc.screenname, name );
 
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	sprintf( url, "https://api.vk.com/method/groups.getById?v=%s&group_id=%s", api_ver, name );
 	vk_get_request( url, curl, cf );
 	free(url);
@@ -168,8 +168,8 @@ group( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
-	strncpy_safe( acc.grp_name, js_get_str( el, "name" ), BUF_S/2 );
-	strncpy_safe( acc.grp_type, js_get_str( el, "type" ), BUF_S/4 );
+	strncpy_safe( acc.grp_name, js_get_str( el, "name" ), BUFSIZ/2 );
+	strncpy_safe( acc.grp_type, js_get_str( el, "type" ), BUFSIZ/4 );
 
 	json_decref(json);
 	return acc.grp_ok;
@@ -413,7 +413,7 @@ api_request_pause( void )
 size_t
 get_albums( CURL * curl )
 {
-	char addit_request[BUF_S];
+	char addit_request[BUFSIZ];
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
 
@@ -424,7 +424,7 @@ get_albums( CURL * curl )
 		addit_request[0] = '\0';
 
 	/* getting response */
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
 	         acc.id, TOKEN, api_ver, addit_request );
 	vk_get_request( url, curl, cf );
@@ -477,7 +477,7 @@ get_albums( CURL * curl )
 		{
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
-			strncpy_safe( albums[index].title, js_get_str( el, "title" ), BUF_S );
+			strncpy_safe( albums[index].title, js_get_str( el, "title" ), BUFSIZ );
 			photos_count += albums[index].size;
 		}
 	}
@@ -591,10 +591,10 @@ get_id( int argc, char ** argv, CURL * curl )
 void
 get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 {
-	char alchar[BUF_S];
-	char * curpath = malloc(BUF_S);
-	char * dirchar = malloc(BUF_S);
-	char * url = malloc(BUF_S);
+	char alchar[BUFSIZ];
+	char * curpath = malloc(BUFSIZ);
+	char * dirchar = malloc(BUFSIZ);
+	char * url = malloc(BUFSIZ);
 	unsigned i;
 
 
@@ -680,7 +680,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 void
 get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long long post_id  )
 {
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	long long offset = 0;
 	long long posts_count = 0;
 
@@ -764,10 +764,10 @@ void
 get_wall( char * idpath, CURL * curl )
 {
 	/* Char allocation */
-	char posts_path[BUF_S];
-	char * attach_path = malloc(BUF_S);
-	char * curpath = malloc(BUF_S);
-	char * url = malloc(BUF_S);
+	char posts_path[BUFSIZ];
+	char * attach_path = malloc(BUFSIZ);
+	char * curpath = malloc(BUFSIZ);
+	char * url = malloc(BUFSIZ);
 
 	sprintf( curpath, "%s/%s", idpath, DIRNAME_WALL );
 	sprintf( posts_path, "%s/%s", idpath, FILNAME_POSTS );
@@ -897,8 +897,8 @@ get_docs( char * idpath, CURL * curl )
 {
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	char * dirpath = malloc(BUF_S);
-	char * doc_path = malloc(BUF_S);
+	char * dirpath = malloc(BUFSIZ);
+	char * doc_path = malloc(BUFSIZ);
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
@@ -907,7 +907,7 @@ get_docs( char * idpath, CURL * curl )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* Sending API request docs.get */
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	sprintf( url, "https://api.vk.com/method/docs.get?owner_id=%lld%s&v=%s", acc.id, TOKEN, api_ver );
 	vk_get_request( url, curl, cf );
 	free(url);
@@ -961,12 +961,12 @@ get_friends( char * idpath, CURL * curl )
 {
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	char outfl[BUF_S];
+	char outfl[BUFSIZ];
 
 	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
 	FILE * outptr = fopen( outfl, "w" );
 
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	sprintf( url,
 	         "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
 	         acc.id, TOKEN, api_ver );
@@ -1019,12 +1019,12 @@ get_groups( char * idpath, CURL * curl )
 {
 	struct crl_st wk_crl_st;
 	struct crl_st * cf = &wk_crl_st;
-	char outfl[BUF_S];
+	char outfl[BUFSIZ];
 
 	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
 	FILE * outptr = fopen( outfl, "w" );
 
-	char * url = malloc(BUF_S);
+	char * url = malloc(BUFSIZ);
 	sprintf( url, "https://api.vk.com/method/groups.get?user_id=%lld&extended=1%s&v=%s",
 	         acc.id, TOKEN, api_ver );
 	vk_get_request( url, curl, cf );
@@ -1075,9 +1075,9 @@ get_groups( char * idpath, CURL * curl )
 void
 get_videos( char * idpath, CURL * curl )
 {
-	char * url = malloc(BUF_S);
-	char * dirpath = malloc( BUF_S );
-	char * vidpath = malloc( BUF_S );
+	char * url = malloc(BUFSIZ);
+	char * dirpath = malloc(BUFSIZ);
+	char * vidpath = malloc(BUFSIZ);
 	long long vid_count = 0;
 
 	/* creating document directory */
@@ -1088,7 +1088,7 @@ get_videos( char * idpath, CURL * curl )
 
 	/* creating log file with external links */
 	char * vid_log_path;
-	vid_log_path = malloc( BUF_S );
+	vid_log_path = malloc(BUFSIZ);
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 

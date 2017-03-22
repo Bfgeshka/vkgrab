@@ -8,11 +8,11 @@
 struct data_account
 {
 	long long id;
-	char screenname[BUF_S/2];
-	char usr_fname[BUF_S/2];
-	char usr_lname[BUF_S/2];
-	char grp_name[BUF_S/2];
-	char grp_type[BUF_S/4];
+	char screenname[BUFSIZ/2];
+	char usr_fname[BUFSIZ/2];
+	char usr_lname[BUFSIZ/2];
+	char grp_name[BUFSIZ/2];
+	char grp_type[BUFSIZ/4];
 
 	/* 0 means ok: */
 	short grp_ok;
@@ -23,7 +23,7 @@ struct data_album
 {
 	long long aid;
 	long long size;
-	char title[BUF_S];
+	char title[BUFSIZ];
 };
 
 struct control_datatypes
