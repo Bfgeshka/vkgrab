@@ -10,6 +10,7 @@
 #include "methods.h"
 #include "curl_req.h"
 
+#define TOKEN_USE
 char TOKEN[BUFSIZ] = TOKEN_HEAD;
 
 int
@@ -78,7 +79,7 @@ user( char * name, CURL * curl )
 	acc.usr_ok = 0;
 
 	char * url = malloc(BUFSIZ);
-	sprintf( url, "https://api.vk.com/method/users.get?user_ids=%s&v=%s", name, api_ver );
+	sprintf( url, "%s/users.get?user_ids=%s&v=%s", REQ_HEAD, name, API_VER );
 	vk_get_request( url, curl, cf );
 	free(url);
 
@@ -131,7 +132,7 @@ group( char * name, CURL * curl )
 	strcpy( acc.screenname, name );
 
 	char * url = malloc(BUFSIZ);
-	sprintf( url, "https://api.vk.com/method/groups.getById?v=%s&group_id=%s", api_ver, name );
+	sprintf( url, "%s/groups.getById?v=%s&group_id=%s", REQ_HEAD, API_VER, name );
 	vk_get_request( url, curl, cf );
 	free(url);
 
@@ -425,8 +426,8 @@ get_albums( CURL * curl )
 
 	/* getting response */
 	char * url = malloc(BUFSIZ);
-	sprintf( url, "https://api.vk.com/method/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
-	         acc.id, TOKEN, api_ver, addit_request );
+	sprintf( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
+	         REQ_HEAD, acc.id, TOKEN, API_VER, addit_request );
 	vk_get_request( url, curl, cf );
 	free(url);
 
@@ -505,7 +506,7 @@ get_id( int argc, char ** argv, CURL * curl )
 				{
 					case 'h': help_print(); return 0;
 					case 'T': printf( "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
-									   APPLICATION_ID, permissions ); return 0;
+									   APPLICATION_ID, PERMISSIONS ); return 0;
 					default:  puts( "Invalid argument." ); return 0;
 				}
 			else
@@ -623,8 +624,8 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				}
 
 				/* creating request */
-				sprintf( url, "https://api.vk.com/method/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
-				         acc.id, albums[i].aid, offset * LIMIT_A, TOKEN, api_ver );
+				sprintf( url, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
+				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN, API_VER );
 				vk_get_request( url, curl, cf );
 
 				char * r = malloc( cf->size + 1 );
@@ -689,8 +690,8 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 		struct crl_st wk_crl_st;
 		struct crl_st * cf = &wk_crl_st;
 		/* Forming request */
-		sprintf( url, "https://api.vk.com/method/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
-		         acc.id, post_id, LIMIT_C, offset, TOKEN, api_ver );
+		sprintf( url, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
+		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN, API_VER );
 
 		vk_get_request( url, curl, cf );
 		char * r = malloc( cf->size + 1 );
@@ -785,9 +786,8 @@ get_wall( char * idpath, CURL * curl )
 		struct crl_st wk_crl_st;
 		struct crl_st * cf = &wk_crl_st;
 
-		sprintf( url,
-		         "https://api.vk.com/method/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
-		         acc.id, LIMIT_W, offset, TOKEN, api_ver );
+		sprintf( url, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
+		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN, API_VER );
 		vk_get_request( url, curl, cf );
 
 		char * r = malloc( cf->size + 1 );
@@ -908,7 +908,7 @@ get_docs( char * idpath, CURL * curl )
 
 	/* Sending API request docs.get */
 	char * url = malloc(BUFSIZ);
-	sprintf( url, "https://api.vk.com/method/docs.get?owner_id=%lld%s&v=%s", acc.id, TOKEN, api_ver );
+	sprintf( url, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
 	vk_get_request( url, curl, cf );
 	free(url);
 
@@ -967,9 +967,8 @@ get_friends( char * idpath, CURL * curl )
 	FILE * outptr = fopen( outfl, "w" );
 
 	char * url = malloc(BUFSIZ);
-	sprintf( url,
-	         "https://api.vk.com/method/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
-	         acc.id, TOKEN, api_ver );
+	sprintf( url, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
+	         REQ_HEAD, acc.id, TOKEN, API_VER );
 	vk_get_request( url, curl, cf );
 	free(url);
 
@@ -1011,7 +1010,7 @@ get_friends( char * idpath, CURL * curl )
 	}
 
 	json_decref(json);
-	fclose( outptr );
+	fclose(outptr);
 }
 
 void
@@ -1025,8 +1024,7 @@ get_groups( char * idpath, CURL * curl )
 	FILE * outptr = fopen( outfl, "w" );
 
 	char * url = malloc(BUFSIZ);
-	sprintf( url, "https://api.vk.com/method/groups.get?user_id=%lld&extended=1%s&v=%s",
-	         acc.id, TOKEN, api_ver );
+	sprintf( url, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
 	vk_get_request( url, curl, cf );
 	free(url);
 
@@ -1099,9 +1097,10 @@ get_videos( char * idpath, CURL * curl )
 	{
 		struct crl_st wk_crl_st;
 		struct crl_st * cf = &wk_crl_st;
+
 		/* creating request */
-		sprintf( url, "https://api.vk.com/method/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
-		         acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, api_ver );
+		sprintf( url, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
+		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, API_VER );
 		vk_get_request( url, curl, cf );
 
 		char * r = malloc( cf->size + 1 );
@@ -1156,3 +1155,4 @@ get_videos( char * idpath, CURL * curl )
 	free(vidpath);
 	fclose(vid_log);
 }
+

@@ -1,12 +1,14 @@
 CC = cc
 
 SRC = src/main.c src/methods.c src/curl_req.c
+SRC_SND = dirty_tools/${NAME_SND}/main.c dirty_tools/${NAME_SND}/functions.c src/methods.c src/curl_req.c
 OBJS = $(SRC:.c=.o)
 
 NAME = vkgrab
+NAME_SND = blacklist_finder
 PREFIX = /usr/local
 
-CFLAGS = -Os -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE
+CFLAGS = -O3 -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE
 LDFLAGS := $(shell pkg-config --libs jansson libcurl)
 
 all: clean options ${NAME}
@@ -19,8 +21,13 @@ options:
 ${NAME}:
 	${CC} ${SRC} ${CFLAGS} ${LDFLAGS} -o ${NAME}
 
+${NAME_SND}: options clean
+	${CC} ${SRC_SND} ${CFLAGS} ${LDFLAGS} -o ${NAME_SND}
+	mv ${NAME_SND} dirty_tools/${NAME_SND}/
+
 clean:
 	rm -f ${NAME}
+	rm -f ${NAME_SND}
 	rm -f ./*.o
 
 install:
