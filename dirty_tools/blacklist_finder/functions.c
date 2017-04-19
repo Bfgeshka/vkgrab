@@ -211,31 +211,31 @@ user_subs( long long id, char * output_file )
 	struct user_numbers un;
 	struct user_numbers * numb = &un;
 	un.offset = 0;
-		struct crl_st wk_crl_st;
-		struct crl_st * cf = &wk_crl_st;
+	struct crl_st wk_crl_st;
+	struct crl_st * cf = &wk_crl_st;
 	/* Requesting data */
 	char url[BUFSIZ];
-	sprintf( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name%s", \
+	sprintf( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name,last_seen%s", \
 	         REQ_HEAD, API_VER, id, TKN );
 
-		vk_get_request( url, grp.curl, cf );
-		char * r = malloc( cf->size + 1 );
-		sprintf( r, "%s", cf->payload );
-		r[ cf->size ] = 0;
-		if ( cf->payload != NULL )
-			free( cf->payload );
+	vk_get_request( url, grp.curl, cf );
+	char * r = malloc( cf->size + 1 );
+	sprintf( r, "%s", cf->payload );
+	r[ cf->size ] = 0;
+	if ( cf->payload != NULL )
+		free( cf->payload );
 
-		/* Parsing json */
-		json_t * json;
-		json_error_t json_err;
-		json = json_loads( r, 0, &json_err );
-		if ( r != NULL )
-			free(r);
-		if ( !json )
-		{
-			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err.line, json_err.text );
-			return -2;
-		}
+	/* Parsing json */
+	json_t * json;
+	json_error_t json_err;
+	json = json_loads( r, 0, &json_err );
+	if ( r != NULL )
+		free(r);
+	if ( !json )
+	{
+		fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		return -2;
+	}
 
 	json_auto_t * rsp = json_object_get( json, "response" );
 	if ( !rsp )
@@ -250,7 +250,11 @@ user_subs( long long id, char * output_file )
 
 	FILE * logfile = fopen( output_file, "w" );
 	json_auto_t * json_ar = json_array_get( rsp, 0 );
-	fprintf( logfile, "%s:\"%s %s\"\n\n", js_get_str( json_ar, "screen_name" ), js_get_str( json_ar, "first_name" ), js_get_str( json_ar, "last_name" ) );
+	fprintf( logfile, "%s:\"%s %s\"\n", js_get_str( json_ar, "screen_name" ), js_get_str( json_ar, "first_name" ), js_get_str( json_ar, "last_name" ) );
+
+	json_auto_t * lseen = json_object_get( json_ar, "last_seen" );
+	fprintf( logfile, ":ls:%lld\n\n", js_get_int( lseen, "time" ) );
+
 	do
 	{
 		if ( cycle_users( id, numb, logfile ) != 0 )
@@ -264,7 +268,7 @@ user_subs( long long id, char * output_file )
 	}
 	while ( un.count > un.offset );
 
-/*	json_decref(json);*/
+	/*	json_decref(json);*/
 	api_request_pause();
 	fclose( logfile );
 	return 0;

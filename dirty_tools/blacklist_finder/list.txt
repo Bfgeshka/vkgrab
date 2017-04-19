@@ -15,6 +15,7 @@
 ^autoblogvk:
 ^bageto:
 ^bezopasnyjinternet:
+^big_russian_bot_memes:
 ^bolhe:
 ^bugurt_thread:
 ^chan4:
@@ -37,6 +38,7 @@
 ^cyberchel:
 ^cyberdrugtver:
 ^cyber_smol:
+^dayvinchik:
 ^degradination:
 ^degromusley:
 ^devpoymut:
@@ -53,6 +55,7 @@
 ^genprocrf:
 ^goodm2016:
 ^gorod_grexxxov:
+^hikkavil:
 ^hitrosti_jizni_ru:
 ^hmideas:
 ^i4sms:
@@ -90,10 +93,12 @@
 ^obityt:
 ^onesc:
 ^onlymemes:
+^onlyorly:
 ^onovoe:
 ^onsch:
 ^oroom:
 ^ostroym:
+^ououooua:
 ^pablik_dolboyoba:
 ^paradiseforman1:
 ^parentchannel:
