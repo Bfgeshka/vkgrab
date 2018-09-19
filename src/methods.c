@@ -11,18 +11,18 @@
 #include "curl_req.h"
 
 #define TOKEN_USE
-char TOKEN[BUFSIZ] = TOKEN_HEAD;
+char TOKEN[256] = TOKEN_HEAD;
 
 int
 readable_date( long long epoch, FILE * log )
 {
-	char date_invoke[BUFSIZ];
-	char date_result[BUFSIZ];
+	char date_invoke[2048];
+	char date_result[2048];
 	sprintf( date_invoke, "date --date='@%lld'", epoch );
 
 	FILE * piped;
 	piped = popen( date_invoke, "r" );
-	if ( fgets( date_result, BUFSIZ, piped ) == NULL )
+	if ( fgets( date_result, 2048, piped ) == NULL )
 	{
 		if ( piped != NULL )
 			fclose(piped);
@@ -73,27 +73,19 @@ js_get_str( json_t * src, char * key )
 short
 user( char * name, CURL * curl )
 {
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
+	struct crl_st cf;
 	strcpy( acc.screenname, name );
 	acc.usr_ok = 0;
 
-	char * url = malloc(BUFSIZ);
-	sprintf( url, "%s/users.get?user_ids=%s&v=%s", REQ_HEAD, name, API_VER );
-	vk_get_request( url, curl, cf );
-	free(url);
-
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
+	char url[4096];
+	sprintf( url, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN );
+	vk_get_request( url, curl, &cf );
 
 	json_t * json;
 	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json = json_loads( cf.payload, 0, &json_err );
+	if ( cf.payload != NULL )
+		free(cf.payload);
 	if ( !json )
 	{
 		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
@@ -116,8 +108,8 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	acc.id = js_get_int( el, "id" );
-	strncpy_safe( acc.usr_fname, js_get_str( el, "first_name" ), BUFSIZ/2 );
-	strncpy_safe( acc.usr_lname, js_get_str( el, "last_name" ), BUFSIZ/2 );
+	strncpy_safe( acc.usr_fname, js_get_str( el, "first_name" ), 512 );
+	strncpy_safe( acc.usr_lname, js_get_str( el, "last_name" ), 512 );
 
 	json_decref(json);
 	return acc.usr_ok;
@@ -126,27 +118,19 @@ user( char * name, CURL * curl )
 short
 group( char * name, CURL * curl )
 {
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
+	struct crl_st cf;
 	acc.grp_ok = 0;
 	strcpy( acc.screenname, name );
 
-	char * url = malloc(BUFSIZ);
-	sprintf( url, "%s/groups.getById?v=%s&group_id=%s", REQ_HEAD, API_VER, name );
-	vk_get_request( url, curl, cf );
-	free(url);
-
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
+	char url[4096];
+	sprintf( url, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN );
+	vk_get_request( url, curl, &cf );
 
 	json_t * json;
 	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json = json_loads( cf.payload, 0, &json_err );
+	if ( cf.payload != NULL )
+		free(cf.payload);
 	if ( !json )
 	{
 		fprintf( stderr, "JSON groups.getById parsing error.\n%d:%s\n", json_err.line, json_err.text );
@@ -169,8 +153,8 @@ group( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
-	strncpy_safe( acc.grp_name, js_get_str( el, "name" ), BUFSIZ/2 );
-	strncpy_safe( acc.grp_type, js_get_str( el, "type" ), BUFSIZ/4 );
+	strncpy_safe( acc.grp_name, js_get_str( el, "name" ), 512 );
+	strncpy_safe( acc.grp_type, js_get_str( el, "type" ), 512 );
 
 	json_decref(json);
 	return acc.grp_ok;
@@ -414,9 +398,8 @@ api_request_pause( void )
 size_t
 get_albums( CURL * curl )
 {
-	char addit_request[BUFSIZ];
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
+	char addit_request[2048];
+	struct crl_st cf;
 
 	/* Wall album is hidden for groups */
 	if ( acc.id < 0 )
@@ -425,24 +408,17 @@ get_albums( CURL * curl )
 		addit_request[0] = '\0';
 
 	/* getting response */
-	char * url = malloc(BUFSIZ);
+	char url[4096];
 	sprintf( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
 	         REQ_HEAD, acc.id, TOKEN, API_VER, addit_request );
-	vk_get_request( url, curl, cf );
-	free(url);
-
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
+	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json = json_loads( cf.payload, 0, &json_err );
+	if ( cf.payload != NULL )
+		free(cf.payload);
 	if ( !json )
 	{
 		fprintf( stderr, "JSON album parsing error.\n%d:%s\n", json_err.line, json_err.text );
@@ -478,7 +454,7 @@ get_albums( CURL * curl )
 		{
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
-			strncpy_safe( albums[index].title, js_get_str( el, "title" ), BUFSIZ );
+			strncpy_safe( albums[index].title, js_get_str( el, "title" ), 512 );
 			photos_count += albums[index].size;
 		}
 	}
@@ -592,12 +568,11 @@ get_id( int argc, char ** argv, CURL * curl )
 void
 get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 {
-	char alchar[BUFSIZ];
-	char * curpath = malloc(BUFSIZ);
-	char * dirchar = malloc(BUFSIZ);
-	char * url = malloc(BUFSIZ);
+	char alchar[2048];
+	char dirchar[4096];
+	char curpath[2048];
+	char url[2048];
 	unsigned i;
-
 
 	for( i = 0; i < arr_size; ++i )
 	{
@@ -610,8 +585,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 			int times = albums[i].size / LIMIT_A;
 			for ( offset = 0; offset <= times; ++offset )
 			{
-				struct crl_st wk_crl_st;
-				struct crl_st * cf = &wk_crl_st;
+				struct crl_st cf;
 
 				/* common names for service albums */
 				switch( albums[i].aid )
@@ -626,13 +600,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				/* creating request */
 				sprintf( url, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
 				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN, API_VER );
-				vk_get_request( url, curl, cf );
-
-				char * r = malloc( cf->size + 1 );
-				sprintf( r, "%s", cf->payload );
-				if ( cf->payload != NULL )
-					free( cf->payload );
-				r[ cf->size ] = 0;
+				vk_get_request( url, curl, &cf );
 
 				/* creating album directory */
 				fix_filename(alchar);
@@ -644,9 +612,9 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				/* parsing json */
 				json_t * json;
 				json_error_t json_err;
-				json = json_loads( r, 0, &json_err );
-				if ( r != NULL )
-					free(r);
+				json = json_loads( cf.payload, 0, &json_err );
+				if ( cf.payload != NULL )
+					free(cf.payload);
 				if ( !json )
 					fprintf( stderr, "JSON photos.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
@@ -672,40 +640,30 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 
 		api_request_pause();
 	}
-
-	free(dirchar);
-	free(curpath);
-	free(url);
 }
 
 void
 get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long long post_id  )
 {
-	char * url = malloc(BUFSIZ);
+	char url[2048];
 	long long offset = 0;
 	long long posts_count = 0;
 
 	do
 	{
-		struct crl_st wk_crl_st;
-		struct crl_st * cf = &wk_crl_st;
+		struct crl_st cf;
 		/* Forming request */
 		sprintf( url, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN, API_VER );
 
-		vk_get_request( url, curl, cf );
-		char * r = malloc( cf->size + 1 );
-		sprintf( r, "%s", cf->payload );
-		r[ cf->size ] = 0;
-		if ( cf->payload != NULL )
-			free( cf->payload );
+		vk_get_request( url, curl, &cf );
 
 		/* Parsing json */
 		json_t * json;
 		json_error_t json_err;
-		json = json_loads( r, 0, &json_err );
-		if ( r != NULL )
-			free(r);
+		json = json_loads( cf.payload, 0, &json_err );
+		if ( cf.payload != NULL )
+			free(cf.payload);
 		if ( !json )
 			fprintf( stderr, "JSON wall.getComments parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
@@ -757,18 +715,16 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 		api_request_pause();
 	}
 	while( posts_count - offset > 0 );
-
-	free(url);
 }
 
 void
 get_wall( char * idpath, CURL * curl )
 {
 	/* Char allocation */
-	char posts_path[BUFSIZ];
-	char * attach_path = malloc(BUFSIZ);
-	char * curpath = malloc(BUFSIZ);
-	char * url = malloc(BUFSIZ);
+	char posts_path[2048];
+	char attach_path[2048];
+	char curpath[2048];
+	char url[2048];
 
 	sprintf( curpath, "%s/%s", idpath, DIRNAME_WALL );
 	sprintf( posts_path, "%s/%s", idpath, FILNAME_POSTS );
@@ -783,25 +739,18 @@ get_wall( char * idpath, CURL * curl )
 	long long posts_count = 0;
 	do
 	{
-		struct crl_st wk_crl_st;
-		struct crl_st * cf = &wk_crl_st;
+		struct crl_st cf;
 
 		sprintf( url, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN, API_VER );
-		vk_get_request( url, curl, cf );
-
-		char * r = malloc( cf->size + 1 );
-		sprintf( r, "%s", cf->payload );
-		r[ cf->size ] = 0;
-		if ( cf->payload != NULL )
-			free( cf->payload );
+		vk_get_request( url, curl, &cf );
 
 		/* Parsing json */
 		json_t * json;
 		json_error_t json_err;
-		json = json_loads( r, 0, &json_err );
-		if ( r != NULL )
-			free(r);
+		json = json_loads( cf.payload, 0, &json_err );
+		if ( cf.payload != NULL )
+			free(cf.payload);
 		if ( !json )
 			fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
@@ -886,19 +835,15 @@ get_wall( char * idpath, CURL * curl )
 	}
 	while( posts_count - offset > 0 );
 
-	free(url);
-	free(curpath);
-	free(attach_path);
 	fclose(posts);
 }
 
 void
 get_docs( char * idpath, CURL * curl )
 {
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
-	char * dirpath = malloc(BUFSIZ);
-	char * doc_path = malloc(BUFSIZ);
+	struct crl_st cf;
+	char dirpath[2048];
+	char doc_path[2048];
 
 	/* creating document directory */
 	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
@@ -907,23 +852,16 @@ get_docs( char * idpath, CURL * curl )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* Sending API request docs.get */
-	char * url = malloc(BUFSIZ);
+	char url[2048];
 	sprintf( url, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
-	vk_get_request( url, curl, cf );
-	free(url);
-
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
+	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json = json_loads( cf.payload, 0, &json_err );
+	if ( cf.payload != NULL )
+		free(cf.payload);
 	if ( !json )
 		fprintf( stderr, "JSON docs.get parsing error:\n%d:%s\n", json_err.line, json_err.text );
 
@@ -952,38 +890,28 @@ get_docs( char * idpath, CURL * curl )
 	}
 
 	json_decref(json);
-	free(dirpath);
-	free(doc_path);
 }
 
 void
 get_friends( char * idpath, CURL * curl )
 {
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
-	char outfl[BUFSIZ];
+	struct crl_st cf;
+	char outfl[2048];
 
 	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
 	FILE * outptr = fopen( outfl, "w" );
 
-	char * url = malloc(BUFSIZ);
+	char url[2048];
 	sprintf( url, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
 	         REQ_HEAD, acc.id, TOKEN, API_VER );
-	vk_get_request( url, curl, cf );
-	free(url);
-
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
+	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json = json_loads( cf.payload, 0, &json_err );
+	if ( cf.payload != NULL )
+		free(cf.payload);
 	if ( !json )
 		fprintf( stderr, "JSON wall.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
@@ -1016,30 +944,22 @@ get_friends( char * idpath, CURL * curl )
 void
 get_groups( char * idpath, CURL * curl )
 {
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
-	char outfl[BUFSIZ];
+	struct crl_st cf;
+	char outfl[2048];
 
 	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
 	FILE * outptr = fopen( outfl, "w" );
 
-	char * url = malloc(BUFSIZ);
+	char url[2048];
 	sprintf( url, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
-	vk_get_request( url, curl, cf );
-	free(url);
-
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
+	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
 	json_t * json;
 	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json = json_loads( cf.payload, 0, &json_err );
+	if ( cf.payload != NULL )
+		free(cf.payload);
 	if ( !json )
 		fprintf( stderr, "JSON groups.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
@@ -1073,9 +993,9 @@ get_groups( char * idpath, CURL * curl )
 void
 get_videos( char * idpath, CURL * curl )
 {
-	char * url = malloc(BUFSIZ);
-	char * dirpath = malloc(BUFSIZ);
-	char * vidpath = malloc(BUFSIZ);
+	char url[2048];
+	char dirpath[2048];
+	char vidpath[2048];
 	long long vid_count = 0;
 
 	/* creating document directory */
@@ -1085,8 +1005,7 @@ get_videos( char * idpath, CURL * curl )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* creating log file with external links */
-	char * vid_log_path;
-	vid_log_path = malloc(BUFSIZ);
+	char vid_log_path[2048];
 	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
@@ -1095,26 +1014,19 @@ get_videos( char * idpath, CURL * curl )
 	int times = 0;
 	for ( ; offset <= times; ++offset )
 	{
-		struct crl_st wk_crl_st;
-		struct crl_st * cf = &wk_crl_st;
+		struct crl_st cf;
 
 		/* creating request */
 		sprintf( url, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
 		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, API_VER );
-		vk_get_request( url, curl, cf );
-
-		char * r = malloc( cf->size + 1 );
-		sprintf( r, "%s", cf->payload );
-		r[ cf->size ] = 0;
-		if ( cf->payload != NULL )
-			free( cf->payload );
+		vk_get_request( url, curl, &cf );
 
 		/* JSON init */
 		json_t * json;
 		json_error_t json_err;
-		json = json_loads( r, 0, &json_err );
-		if ( r != NULL )
-			free(r);
+		json = json_loads( cf.payload, 0, &json_err );
+		if ( cf.payload != NULL )
+			free(cf.payload);
 		if ( !json )
 			fprintf( stderr, "JSON video.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 
@@ -1149,10 +1061,6 @@ get_videos( char * idpath, CURL * curl )
 		times = vid_count / LIMIT_V;
 	}
 
-	free(url);
-	free(dirpath);
-	free(vid_log_path);
-	free(vidpath);
 	fclose(vid_log);
 }
 

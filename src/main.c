@@ -35,8 +35,8 @@ main( int argc, char ** argv )
 		return 2;
 
 	/* Naming file metadata */
-	char output_dir[BUFSIZ];
-	char name_descript[BUFSIZ];
+	char output_dir[1024];
+	char name_descript[2048];
 	if ( acc.usr_ok == 0 )
 	{
 		sprintf( output_dir, "u_%lld", acc.id );

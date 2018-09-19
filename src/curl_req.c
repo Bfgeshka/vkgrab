@@ -90,11 +90,11 @@ vk_get_request( const char * url, CURL * hc, struct crl_st * cf )
 	/* struct initialiisation */
 	CURLcode code;
 	cf->size = 0;
-	cf->payload = malloc(0);
+	cf->payload = malloc(1);
 
 	/* fetching an answer */
-	code = crl_fetch( hc, url, cf );
 	curl_easy_reset( hc );
+	code = crl_fetch( hc, url, cf );
 
 	/* checking result */
 	if ( code != CURLE_OK || cf->size < 1 )
