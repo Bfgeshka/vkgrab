@@ -79,11 +79,11 @@
  * Use 'offline' permission if you want permanent token. Be careful with it.
  * You can add your permanent token after '=' in CONST_TOKEN string.
  */
-#define permissions "video,docs,photos,offline"
+#define PERMISSIONS "video,docs,photos,offline"
 #define TOKEN_HEAD "&access_token="
 #define CONST_TOKEN "&access_token=26eaa951a1d0eae05b4f077cfea5b"
 
 /* Currently used api version */
-#define api_ver "5.62"
+#define API_VER "5.62"
 
 #endif
