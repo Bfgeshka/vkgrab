@@ -25,13 +25,13 @@ readable_date( long long epoch, FILE * log )
 	if ( fgets( date_result, 2048, piped ) == NULL )
 	{
 		if ( piped != NULL )
-			fclose(piped);
+			pclose(piped);
 
 		sprintf( date_result, "date get failed" );
 		return -1;
 	}
 
-	fclose(piped);
+	pclose(piped);
 	fprintf( log, "DATE: %s", date_result );
 
 	return 0;
@@ -1063,4 +1063,3 @@ get_videos( char * idpath, CURL * curl )
 
 	fclose(vid_log);
 }
-
