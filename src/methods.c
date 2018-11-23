@@ -22,16 +22,15 @@ readable_date( long long epoch, FILE * log )
 
 	FILE * piped;
 	piped = popen( date_invoke, "r" );
-	if ( fgets( date_result, 2048, piped ) == NULL )
+	if ( piped == NULL )
 	{
-		if ( piped != NULL )
-			pclose(piped);
-
 		sprintf( date_result, "date get failed" );
 		return -1;
 	}
 
+	fgets( date_result, 2048, piped );
 	pclose(piped);
+
 	fprintf( log, "DATE: %s", date_result );
 
 	return 0;
