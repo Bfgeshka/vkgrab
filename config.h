@@ -58,7 +58,7 @@
  * Only 3 requests per second are allowed.
  *
  * I had no other choice, don't be harsh. */
-#define USLEEP_INT 200000
+#define NANOSLEEP_INT 200000000L
 
 /* Defines which file types would be downloaded; 0 means skip, 1 means download.
  * These are default values, can be overriden. Read vkgrab -h for more info. */

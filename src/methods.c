@@ -390,7 +390,7 @@ help_print( void )
 void
 api_request_pause( void )
 {
-	nanosleep( &(const struct timespec){ 0, 200000000L }, NULL );
+	nanosleep( &(const struct timespec){ 0, NANOSLEEP_INT }, NULL );
 }
 
 size_t
