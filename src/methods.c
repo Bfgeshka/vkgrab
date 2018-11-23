@@ -390,8 +390,9 @@ help_print( void )
 void
 api_request_pause( void )
 {
-	if ( usleep( (unsigned int) USLEEP_INT ) != 0 )
-		puts( "Sleep error." );
+//	if ( usleep( (unsigned int) USLEEP_INT ) != 0 )
+	nanosleep( &(const struct timespec){ 0, 200000000L }, NULL );
+//		puts( "Sleep error." );
 }
 
 size_t
