@@ -51,7 +51,7 @@ strncpy_safe( char * dst, const char * src, size_t n )
 void
 check_token( void )
 {
-	if ( !strcmp( TOKEN, CONST_TOKEN ) )
+	if ( strlen(TOKEN) != strlen(CONST_TOKEN) )
 		sprintf( TOKEN, "%s", CONST_TOKEN );
 }
 
@@ -162,7 +162,7 @@ group( char * name, CURL * curl )
 void
 fix_filename( char * dirty )
 {
-	size_t name_length = sizeof(dirty);
+	size_t name_length = strlen(dirty);
 	unsigned i;
 	for ( i = 0; i < name_length; ++i )
 	{
@@ -508,11 +508,10 @@ get_id( int argc, char ** argv, CURL * curl )
 						case 'u': user( argv[t+1], curl ); break;
 						case 'g': group( argv[t+1], curl ); break;
 						case 't':
-							if ( strcmp( TOKEN, TOKEN_HEAD ) )
+							if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
 								strcat( TOKEN, argv[t+1] );
 							else
-							{
-								/* Anonymous access */
+							{ /* Anonymous access */
 								if ( atoi( argv[t+1] ) == 0 )
 									sprintf( TOKEN, "%c", '\0' );
 								else
