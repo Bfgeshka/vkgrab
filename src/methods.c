@@ -18,13 +18,13 @@ readable_date( long long epoch, FILE * log )
 {
 	char date_invoke[2048];
 	char date_result[2048];
-	sprintf( date_invoke, "date --date='@%lld'", epoch );
+	snprintf( date_invoke, 2048, "date --date='@%lld'", epoch );
 
 	FILE * piped;
 	piped = popen( date_invoke, "r" );
 	if ( piped == NULL )
 	{
-		sprintf( date_result, "date get failed" );
+		snprintf( date_result, 2048, "%s", "date get failed" );
 		return -1;
 	}
 
@@ -34,18 +34,6 @@ readable_date( long long epoch, FILE * log )
 	fprintf( log, "DATE: %s", date_result );
 
 	return 0;
-}
-
-void
-strncpy_safe( char * dst, const char * src, size_t n )
-{
-	if ( strlen(src) < n )
-		strncpy( dst, src, n );
-	else
-	{
-		strncpy( dst, src, n - 1 );
-		dst[n-1] = '\0';
-	}
 }
 
 void
@@ -107,8 +95,8 @@ user( char * name, CURL * curl )
 
 	/* filling struct */
 	acc.id = js_get_int( el, "id" );
-	strncpy_safe( acc.usr_fname, js_get_str( el, "first_name" ), 512 );
-	strncpy_safe( acc.usr_lname, js_get_str( el, "last_name" ), 512 );
+	snprintf( acc.usr_fname, 512, "%s", js_get_str( el, "first_name" ) );
+	snprintf( acc.usr_lname, 512, "%s", js_get_str( el, "last_name" ) );
 
 	json_decref(json);
 	return acc.usr_ok;
@@ -122,7 +110,7 @@ group( char * name, CURL * curl )
 	strcpy( acc.screenname, name );
 
 	char url[4096];
-	sprintf( url, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN );
+	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN );
 	vk_get_request( url, curl, &cf );
 
 	json_t * json;
@@ -152,8 +140,8 @@ group( char * name, CURL * curl )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
-	strncpy_safe( acc.grp_name, js_get_str( el, "name" ), 512 );
-	strncpy_safe( acc.grp_type, js_get_str( el, "type" ), 512 );
+	snprintf( acc.grp_name, 512, "%s", js_get_str( el, "name" ) );
+	snprintf( acc.grp_type, 512, "%s", js_get_str( el, "type" ) );
 
 	json_decref(json);
 	return acc.grp_ok;
@@ -401,13 +389,13 @@ get_albums( CURL * curl )
 
 	/* Wall album is hidden for groups */
 	if ( acc.id < 0 )
-		sprintf( addit_request, "&album_ids=-7" );
+		snprintf( addit_request, 2048, "%s", "&album_ids=-7" );
 	else
 		addit_request[0] = '\0';
 
 	/* getting response */
 	char url[4096];
-	sprintf( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
+	snprintf( url, 4096, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
 	         REQ_HEAD, acc.id, TOKEN, API_VER, addit_request );
 	vk_get_request( url, curl, &cf );
 
@@ -452,7 +440,7 @@ get_albums( CURL * curl )
 		{
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
-			strncpy_safe( albums[index].title, js_get_str( el, "title" ), 512 );
+			snprintf( albums[index].title, 512, "%s", js_get_str( el, "title" ) );
 			photos_count += albums[index].size;
 		}
 	}
@@ -598,21 +586,39 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				/* common names for service albums */
 				switch( albums[i].aid )
 				{
-					case  -6: sprintf( alchar, DIRNAME_ALB_PROF ); break;
-					case  -7: sprintf( alchar, DIRNAME_ALB_WALL ); break;
-					case -15: sprintf( alchar, DIRNAME_ALB_SAVD ); break;
-					default:  sprintf( alchar, "alb_%lld_(%u:%zu)_(%lld:p)_(%s)",
+					case  -6:
+					{
+						snprintf( alchar, 2048, "%s", DIRNAME_ALB_PROF );
+						break;
+					}
+
+					case  -7:
+					{
+						snprintf( alchar, 2048, "%s", DIRNAME_ALB_WALL );
+						break;
+					}
+
+					case -15:
+					{
+						snprintf( alchar, 2048, "%s", DIRNAME_ALB_SAVD );
+						break;
+					}
+
+					default:
+					{
+						snprintf( alchar, 2048, "alb_%lld_(%u:%zu)_(%lld:p)_(%s)",
 					                   albums[i].aid, i + 1, arr_size, albums[i].size, albums[i].title );
+					}
 				}
 
 				/* creating request */
-				sprintf( url, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
+				snprintf( url, 2048, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
 				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN, API_VER );
 				vk_get_request( url, curl, &cf );
 
 				/* creating album directory */
 				fix_filename(alchar);
-				sprintf( dirchar, "%s/%s", idpath, alchar );
+				snprintf( dirchar, 4096, "%s/%s", idpath, alchar );
 				if ( mkdir( dirchar, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 					if ( errno != EEXIST )
 						fprintf( stderr, "mkdir() error (%d).\n", errno );
@@ -661,7 +667,7 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 	{
 		struct crl_st cf;
 		/* Forming request */
-		sprintf( url, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
+		snprintf( url, 2048, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN, API_VER );
 
 		vk_get_request( url, curl, &cf );
@@ -734,8 +740,8 @@ get_wall( char * idpath, CURL * curl )
 	char curpath[2048];
 	char url[2048];
 
-	sprintf( curpath, "%s/%s", idpath, DIRNAME_WALL );
-	sprintf( posts_path, "%s/%s", idpath, FILNAME_POSTS );
+	snprintf( curpath, 2048, "%s/%s", idpath, DIRNAME_WALL );
+	snprintf( posts_path, 2048, "%s/%s", idpath, FILNAME_POSTS );
 	FILE * posts = fopen( posts_path, "w" );
 
 	if ( mkdir( curpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
@@ -749,7 +755,7 @@ get_wall( char * idpath, CURL * curl )
 	{
 		struct crl_st cf;
 
-		sprintf( url, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
+		snprintf( url, 2048, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN, API_VER );
 		vk_get_request( url, curl, &cf );
 
@@ -854,14 +860,14 @@ get_docs( char * idpath, CURL * curl )
 	char doc_path[2048];
 
 	/* creating document directory */
-	sprintf( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
+	snprintf( dirpath, 2048, "%s/%s", idpath, DIRNAME_DOCS );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* Sending API request docs.get */
 	char url[2048];
-	sprintf( url, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
+	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
 	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
@@ -906,11 +912,11 @@ get_friends( char * idpath, CURL * curl )
 	struct crl_st cf;
 	char outfl[2048];
 
-	sprintf( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
+	snprintf( outfl, 2048, "%s/%s", idpath, FILNAME_FRIENDS );
 	FILE * outptr = fopen( outfl, "w" );
 
 	char url[2048];
-	sprintf( url, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
+	snprintf( url, 2048, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
 	         REQ_HEAD, acc.id, TOKEN, API_VER );
 	vk_get_request( url, curl, &cf );
 
@@ -955,11 +961,11 @@ get_groups( char * idpath, CURL * curl )
 	struct crl_st cf;
 	char outfl[2048];
 
-	sprintf( outfl, "%s/%s", idpath, FILNAME_GROUPS );
+	snprintf( outfl, 2048, "%s/%s", idpath, FILNAME_GROUPS );
 	FILE * outptr = fopen( outfl, "w" );
 
 	char url[2048];
-	sprintf( url, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
+	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
 	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
@@ -1007,14 +1013,14 @@ get_videos( char * idpath, CURL * curl )
 	long long vid_count = 0;
 
 	/* creating document directory */
-	sprintf( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
+	snprintf( dirpath, 2048, "%s/%s", idpath, DIRNAME_VIDEO );
 	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* creating log file with external links */
 	char vid_log_path[2048];
-	sprintf( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
+	snprintf( vid_log_path, 2048, "%s/%s", idpath, FILNAME_VIDEOS );
 	FILE * vid_log = fopen( vid_log_path, "w" );
 
 	/* Loop init */
@@ -1025,7 +1031,7 @@ get_videos( char * idpath, CURL * curl )
 		struct crl_st cf;
 
 		/* creating request */
-		sprintf( url, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
+		snprintf( url, 2048, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
 		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, API_VER );
 		vk_get_request( url, curl, &cf );
 

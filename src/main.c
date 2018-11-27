@@ -39,13 +39,13 @@ main( int argc, char ** argv )
 	char name_descript[2048];
 	if ( acc.usr_ok == 0 )
 	{
-		sprintf( output_dir, "u_%lld", acc.id );
-		sprintf( name_descript, "%lld: %s: %s %s\n", id, acc.screenname, acc.usr_fname, acc.usr_lname );
+		snprintf( output_dir, 1024, "u_%lld", acc.id );
+		snprintf( name_descript, 2048, "%lld: %s: %s %s\n", id, acc.screenname, acc.usr_fname, acc.usr_lname );
 	}
 	else if ( acc.grp_ok == 0 )
 	{
-		sprintf( output_dir, "c_%lld", acc.id );
-		sprintf( name_descript, "%lld: %s: %s\n", id, acc.screenname, acc.grp_name );
+		snprintf( output_dir, 1024, "c_%lld", acc.id );
+		snprintf( name_descript, 2048, "%lld: %s: %s\n", id, acc.screenname, acc.grp_name );
 	}
 	else
 	{
@@ -59,7 +59,7 @@ main( int argc, char ** argv )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 	char name_dsc_path[BUFSIZ];
-	sprintf( name_dsc_path, "%s/%s", output_dir, FILNAME_IDNAME );
+	snprintf( name_dsc_path, BUFSIZ, "%s/%s", output_dir, FILNAME_IDNAME );
 	FILE * u_name = fopen( name_dsc_path, "w" );
 	fprintf( u_name, "%s", name_descript );
 	fclose( u_name );
