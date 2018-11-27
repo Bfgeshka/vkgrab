@@ -9,38 +9,46 @@
 
 #include "methods.h"
 #include "curl_req.h"
+#include "utils.h"
 
-#define TOKEN_USE
-char TOKEN[256] = TOKEN_HEAD;
+struct string TOKEN;
+
+void
+prepare( void )
+{
+	TOKEN = newstring(512);
+	stringset( &TOKEN, TOKEN_HEAD );
+
+	struct string CONSTTOKEN = newstring(512);
+	stringset( &CONSTTOKEN, CONST_TOKEN );
+
+	if ( TOKEN.len != CONSTTOKEN.len )
+		snprintf( TOKEN.c, TOKEN.bufsize, "%s", CONSTTOKEN.c );
+
+	free(CONSTTOKEN.c);
+}
 
 int
 readable_date( long long epoch, FILE * log )
 {
-	char date_invoke[2048];
-	char date_result[2048];
-	snprintf( date_invoke, 2048, "date --date='@%lld'", epoch );
+	char date_invoke[512];
+	char date_result[512];
+	snprintf( date_invoke, 512, "date --date='@%lld'", epoch );
 
 	FILE * piped;
 	piped = popen( date_invoke, "r" );
 	if ( piped == NULL )
 	{
-		snprintf( date_result, 2048, "%s", "date get failed" );
+		snprintf( date_result, 512, "%s", "date get failed" );
 		return -1;
 	}
 
-	fgets( date_result, 2048, piped );
+	fgets( date_result, 512, piped );
 	pclose(piped);
 
 	fprintf( log, "DATE: %s", date_result );
 
 	return 0;
-}
-
-void
-check_token( void )
-{
-	if ( strlen(TOKEN) != strlen(CONST_TOKEN) )
-		snprintf( TOKEN, 256, "%s", CONST_TOKEN );
 }
 
 long long
@@ -65,7 +73,7 @@ user( char * name, CURL * curl )
 	acc.usr_ok = 0;
 
 	char url[4096];
-	snprintf( url, 4096, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN );
+	snprintf( url, 4096, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN.c );
 	vk_get_request( url, curl, &cf );
 
 	json_t * json;
@@ -110,7 +118,7 @@ group( char * name, CURL * curl )
 	snprintf( acc.screenname, BUFSIZ/2, "%s", name );
 
 	char url[4096];
-	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN );
+	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN.c );
 	vk_get_request( url, curl, &cf );
 
 	json_t * json;
@@ -150,9 +158,8 @@ group( char * name, CURL * curl )
 void
 fix_filename( char * dirty )
 {
-	size_t name_length = strlen(dirty);
 	unsigned i;
-	for ( i = 0; i < name_length; ++i )
+	for ( i = 0; dirty[i] != '\0'; ++i )
 	{
 		if ( ( ( dirty[i] & 0xC0 ) != 0x80 ) && ( dirty[i] == '/' || dirty[i] == '\\' ) )
 			dirty[i] = '_';
@@ -396,7 +403,7 @@ get_albums( CURL * curl )
 	/* getting response */
 	char url[4096];
 	snprintf( url, 4096, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
-	         REQ_HEAD, acc.id, TOKEN, API_VER, addit_request );
+	         REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request );
 	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
@@ -496,14 +503,14 @@ get_id( int argc, char ** argv, CURL * curl )
 						case 'u': user( argv[t+1], curl ); break;
 						case 'g': group( argv[t+1], curl ); break;
 						case 't':
-							if ( strlen( TOKEN ) == strlen( TOKEN_HEAD ) )
-								strcat( TOKEN, argv[t+1] );
+							if ( TOKEN.len == strlen( TOKEN_HEAD ) )
+								strcat( TOKEN.c, argv[t+1] );
 							else
 							{ /* Anonymous access */
 								if ( atoi( argv[t+1] ) == 0 )
-									snprintf( TOKEN, 256, "%c", '\0' );
+									snprintf( TOKEN.c, TOKEN.bufsize, "%c", '\0' );
 								else
-									snprintf( TOKEN, 256, "%s%s", TOKEN_HEAD, argv[t+1] );
+									snprintf( TOKEN.c, TOKEN.bufsize, "%s%s", TOKEN_HEAD, argv[t+1] );
 							}
 							break;
 						case 'n':
@@ -613,7 +620,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 
 				/* creating request */
 				snprintf( url, 2048, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
-				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN, API_VER );
+				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN.c, API_VER );
 				vk_get_request( url, curl, &cf );
 
 				/* creating album directory */
@@ -668,7 +675,7 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 		struct crl_st cf;
 		/* Forming request */
 		snprintf( url, 2048, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
-		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN, API_VER );
+		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN.c, API_VER );
 
 		vk_get_request( url, curl, &cf );
 
@@ -756,7 +763,7 @@ get_wall( char * idpath, CURL * curl )
 		struct crl_st cf;
 
 		snprintf( url, 2048, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
-		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN, API_VER );
+		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN.c, API_VER );
 		vk_get_request( url, curl, &cf );
 
 		/* Parsing json */
@@ -867,7 +874,7 @@ get_docs( char * idpath, CURL * curl )
 
 	/* Sending API request docs.get */
 	char url[2048];
-	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
+	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
 	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
@@ -917,7 +924,7 @@ get_friends( char * idpath, CURL * curl )
 
 	char url[2048];
 	snprintf( url, 2048, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
-	         REQ_HEAD, acc.id, TOKEN, API_VER );
+	         REQ_HEAD, acc.id, TOKEN.c, API_VER );
 	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
@@ -965,7 +972,7 @@ get_groups( char * idpath, CURL * curl )
 	FILE * outptr = fopen( outfl, "w" );
 
 	char url[2048];
-	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN, API_VER );
+	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
 	vk_get_request( url, curl, &cf );
 
 	/* parsing json */
@@ -1032,7 +1039,7 @@ get_videos( char * idpath, CURL * curl )
 
 		/* creating request */
 		snprintf( url, 2048, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
-		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN, API_VER );
+		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN.c, API_VER );
 		vk_get_request( url, curl, &cf );
 
 		/* JSON init */

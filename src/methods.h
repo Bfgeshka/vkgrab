@@ -46,7 +46,7 @@ short        group             ( char *, CURL * );
 short        user              ( char *, CURL * );
 size_t       get_albums        ( CURL * );
 void         api_request_pause ( void );
-void         check_token       ( void );
+void         prepare           ( void );
 void         dl_document       ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
 void         dl_photo          ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
 void         dl_video          ( char *, char *, json_t *, CURL *, FILE *, long long, long long );

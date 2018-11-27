@@ -29,7 +29,7 @@ main( int argc, char ** argv )
 	types.ldate = DOGET_DTE;
 
 	/* Checking id */
-	check_token();
+	prepare();
 	long long id = get_id( argc, argv, curl );
 	if ( id == 0 )
 		return 2;
