@@ -1,5 +1,7 @@
 #ifndef CURL_REQ_H_
 #define CURL_REQ_H_
+
+#include <curl/curl.h>
 #include "../config.h"
 
 #define KIBI 1024

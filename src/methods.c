@@ -462,25 +462,23 @@ get_id( int argc, char ** argv )
 {
 	acc.usr_ok = 1;
 	acc.grp_ok = 1;
-	int t;
 
 	switch( argc )
 	{
 		case 1:
-		{
-			help_print();
-			return 0;
-		}
+			goto get_id_print_help;
 
 		case 2:
 		{
 			if ( argv[1][0] == '-' )
 				switch( argv[1][1] )
 				{
-					case 'h': help_print(); return 0;
-					case 'T': printf( "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
-									   APPLICATION_ID, PERMISSIONS ); return 0;
-					default:  puts( "Invalid argument." ); return 0;
+					case 'h':
+						goto get_id_print_help;
+					case 'T':
+						goto get_id_token_request;
+					default:
+						goto get_id_invalid_arg;
 				}
 			else
 			{
@@ -494,7 +492,7 @@ get_id( int argc, char ** argv )
 
 		default:
 		{
-			for ( t = 0; t < argc; ++t )
+			for ( int t = 0; t < argc; ++t )
 			{
 				if ( argv[t][0] == '-' )
 					switch( argv[t][1] )
@@ -513,11 +511,12 @@ get_id( int argc, char ** argv )
 
 						case 't':
 						{
-							if ( TOKEN.len == strlen( TOKEN_HEAD ) )
+							if ( TOKEN.len == strlen(TOKEN_HEAD) )
 								strcat( TOKEN.c, argv[t+1] );
 							else
-							{ /* Anonymous access */
-								if ( atoi( argv[t+1] ) == 0 )
+							{
+								/* Anonymous access */
+								if ( atoi(argv[t+1]) == 0 )
 									snprintf( TOKEN.c, TOKEN.bufsize, "%c", '\0' );
 								else
 									snprintf( TOKEN.c, TOKEN.bufsize, "%s%s", TOKEN_HEAD, argv[t+1] );
@@ -527,42 +526,41 @@ get_id( int argc, char ** argv )
 						}
 
 						case 'n':
-						{
-							switch( argv[t][2] )
-							{
-								case 'p': types.pictr = 0; break;
-								case 'd': types.docmt = 0; break;
-								case 'v': types.video = 0; break;
-								default:  help_print(); return 0;
-							}
-
-							break;
-						}
-
 						case 'y':
 						{
+							int value = ( argv[t][1] == 'n' ) ? 0 : 1;
 							switch( argv[t][2] )
 							{
-								case 'p': types.pictr = 1; break;
-								case 'd': types.docmt = 1; break;
-								case 'v': types.video = 1; break;
-								default:  help_print(); return 0;
+								case 'p':
+								{
+									types.pictr = value;
+									break;
+								}
+
+								case 'd':
+								{
+									types.docmt = value;
+									break;
+								}
+
+								case 'v':
+								{
+									types.video = value;
+									break;
+								}
+
+								default:
+									goto get_id_print_help;
 							}
 
 							break;
 						}
 
 						case 'h':
-						{
-							help_print();
-							return 0;
-						}
+							goto get_id_print_help;
 
 						default:
-						{
-							puts( "Invalid argument." );
-							return 0;
-						}
+							goto get_id_invalid_arg;
 					}
 				if ( ( t == argc - 1 ) && ( acc.usr_ok == 1 ) && ( acc.grp_ok == 1 ) )
 				{
@@ -588,13 +586,22 @@ get_id( int argc, char ** argv )
 		        acc.usr_fname, acc.usr_lname, acc.screenname, acc.id );
 		return acc.id;
 	}
-
 	else
-	{
-		help_print();
-		return 1;
-	}
-	/* failure */
+		goto get_id_print_help;
+
+	/* Print halp and exit */
+	get_id_print_help:
+	help_print();
+	return 0;
+
+	/* Message about invalid argument and exit */
+	get_id_invalid_arg:
+	puts("Invalid argument.");
+	return 0;
+
+	/* Prink token request link and exit */
+	get_id_token_request:
+	printf( "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n", APPLICATION_ID, PERMISSIONS );
 	return 0;
 }
 

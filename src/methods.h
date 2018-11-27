@@ -1,7 +1,6 @@
 #ifndef METHODS_H_
 #define METHODS_H_
 
-#include <curl/curl.h>
 #include <jansson.h>
 #include "../config.h"
 
