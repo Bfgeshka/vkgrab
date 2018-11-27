@@ -40,7 +40,7 @@ void
 check_token( void )
 {
 	if ( strlen(TOKEN) != strlen(CONST_TOKEN) )
-		sprintf( TOKEN, "%s", CONST_TOKEN );
+		snprintf( TOKEN, 256, "%s", CONST_TOKEN );
 }
 
 long long
@@ -61,11 +61,11 @@ short
 user( char * name, CURL * curl )
 {
 	struct crl_st cf;
-	strcpy( acc.screenname, name );
+	snprintf( acc.screenname, BUFSIZ/2, "%s", name );
 	acc.usr_ok = 0;
 
 	char url[4096];
-	sprintf( url, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN );
+	snprintf( url, 4096, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN );
 	vk_get_request( url, curl, &cf );
 
 	json_t * json;
@@ -107,7 +107,7 @@ group( char * name, CURL * curl )
 {
 	struct crl_st cf;
 	acc.grp_ok = 0;
-	strcpy( acc.screenname, name );
+	snprintf( acc.screenname, BUFSIZ/2, "%s", name );
 
 	char url[4096];
 	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN );
@@ -501,9 +501,9 @@ get_id( int argc, char ** argv, CURL * curl )
 							else
 							{ /* Anonymous access */
 								if ( atoi( argv[t+1] ) == 0 )
-									sprintf( TOKEN, "%c", '\0' );
+									snprintf( TOKEN, 256, "%c", '\0' );
 								else
-									sprintf( TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+									snprintf( TOKEN, 256, "%s%s", TOKEN_HEAD, argv[t+1] );
 							}
 							break;
 						case 'n':
@@ -840,7 +840,7 @@ get_wall( char * idpath, CURL * curl )
 				}
 			}
 
-			fprintf( posts, LOG_POSTS_DIVIDER );
+			fprintf( posts, "%s", LOG_POSTS_DIVIDER );
 		}
 
 		offset += LIMIT_W;
