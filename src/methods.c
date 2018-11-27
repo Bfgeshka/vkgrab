@@ -1,4 +1,3 @@
-#include <curl/curl.h>
 #include <errno.h>
 #include <jansson.h>
 #include <stdlib.h>
@@ -66,7 +65,7 @@ js_get_str( json_t * src, char * key )
 }
 
 short
-user( char * name, CURL * curl )
+user( char * name )
 {
 	struct crl_st cf;
 	snprintf( acc.screenname, BUFSIZ/2, "%s", name );
@@ -74,7 +73,7 @@ user( char * name, CURL * curl )
 
 	char url[4096];
 	snprintf( url, 4096, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN.c );
-	vk_get_request( url, curl, &cf );
+	vk_get_request( url, &cf );
 
 	json_t * json;
 	json_error_t json_err;
@@ -111,7 +110,7 @@ user( char * name, CURL * curl )
 }
 
 short
-group( char * name, CURL * curl )
+group( char * name )
 {
 	struct crl_st cf;
 	acc.grp_ok = 0;
@@ -119,7 +118,7 @@ group( char * name, CURL * curl )
 
 	char url[4096];
 	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN.c );
-	vk_get_request( url, curl, &cf );
+	vk_get_request( url, &cf );
 
 	json_t * json;
 	json_error_t json_err;
@@ -167,7 +166,7 @@ fix_filename( char * dirty )
 }
 
 void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
-dl_photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
+dl_photo( char * dirpath, char * filepath, json_t * photo_el, FILE * log, long long post_id, long long comm_id )
 {
 	long long pid;
 	json_t * biggest;
@@ -213,11 +212,11 @@ dl_photo( char * dirpath, char * filepath, json_t * photo_el, CURL * curl, FILE 
 	else
 		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, acc.id, pid );
 
-	vk_get_file( json_string_value( biggest ), filepath, curl );
+	vk_get_file( json_string_value( biggest ), filepath );
 }
 
 void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
-dl_document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
+dl_document( char * dirpath, char * filepath, json_t * doc_el, FILE * log, long long post_id, long long comm_id )
 {
 	long long did;
 	did = js_get_int( doc_el, "id" );
@@ -238,11 +237,11 @@ dl_document( char * dirpath, char * filepath, json_t * doc_el, CURL * curl, FILE
 	else
 		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, acc.id, did, js_get_str( doc_el, "ext" ) );
 
-	vk_get_file( js_get_str( doc_el, "url" ), filepath, curl );
+	vk_get_file( js_get_str( doc_el, "url" ), filepath );
 }
 
 void
-dl_video( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * log, long long post_id, long long comm_id )
+dl_video( char * dirpath, char * filepath, json_t * vid_el, FILE * log, long long post_id, long long comm_id )
 {
 	long long vid;
 	const char * fileurl;
@@ -308,7 +307,7 @@ dl_video( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 				else
 					sprintf( filepath, "%s/%lld.mp4", dirpath, vid );
 
-				vk_get_file( json_string_value( v_link ), filepath, curl );
+				vk_get_file( json_string_value( v_link ), filepath );
 			}
 		}
 	}
@@ -325,7 +324,7 @@ dl_video( char * dirpath, char * filepath, json_t * vid_el, CURL * curl, FILE * 
 }
 
 void
-parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * curl, FILE * logfile, long long post_id, long long comm_id )
+parse_attachments( char * dirpath, char * filepath, json_t * input_json, FILE * logfile, long long post_id, long long comm_id )
 {
 	size_t att_index;
 	json_t * att_elem;
@@ -340,7 +339,7 @@ parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * 
 		if ( strcmp( att_type, data_type[0] ) == 0 && types.pictr == 1 )
 		{
 			output_json = json_object_get( att_elem, data_type[0] );
-			dl_photo( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
+			dl_photo( dirpath, filepath, output_json, logfile, post_id, comm_id );
 		}
 
 		/* If link: 1 */
@@ -355,14 +354,14 @@ parse_attachments( char * dirpath, char * filepath, json_t * input_json, CURL * 
 		if ( strcmp( att_type, data_type[2] ) == 0 && types.docmt == 1 )
 		{
 			output_json = json_object_get( att_elem, data_type[2] );
-			dl_document( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
+			dl_document( dirpath, filepath, output_json, logfile, post_id, comm_id );
 		}
 
 		/* If video: 3 */
 		if ( strcmp( att_type, data_type[3] ) == 0 && types.video == 1 )
 		{
 			output_json = json_object_get( att_elem, data_type[3] );
-			dl_video( dirpath, filepath, output_json, curl, logfile, post_id, comm_id );
+			dl_video( dirpath, filepath, output_json, logfile, post_id, comm_id );
 		}
 	}
 }
@@ -389,7 +388,7 @@ api_request_pause( void )
 }
 
 size_t
-get_albums( CURL * curl )
+get_albums()
 {
 	char addit_request[2048];
 	struct crl_st cf;
@@ -404,7 +403,7 @@ get_albums( CURL * curl )
 	char url[4096];
 	snprintf( url, 4096, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
 	         REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request );
-	vk_get_request( url, curl, &cf );
+	vk_get_request( url, &cf );
 
 	/* parsing json */
 	json_t * json;
@@ -459,7 +458,7 @@ get_albums( CURL * curl )
 }
 
 long long
-get_id( int argc, char ** argv, CURL * curl )
+get_id( int argc, char ** argv )
 {
 	acc.usr_ok = 1;
 	acc.grp_ok = 1;
@@ -485,9 +484,9 @@ get_id( int argc, char ** argv, CURL * curl )
 				}
 			else
 			{
-				user( argv[1], curl );
+				user(argv[1]);
 				if ( acc.usr_ok != 0 )
-					group( argv[1], curl );
+					group(argv[1]);
 			}
 
 			break;
@@ -500,9 +499,20 @@ get_id( int argc, char ** argv, CURL * curl )
 				if ( argv[t][0] == '-' )
 					switch( argv[t][1] )
 					{
-						case 'u': user( argv[t+1], curl ); break;
-						case 'g': group( argv[t+1], curl ); break;
+						case 'u':
+						{
+							user(argv[t+1]);
+							break;
+						}
+
+						case 'g':
+						{
+							group(argv[t+1]);
+							break;
+						}
+
 						case 't':
+						{
 							if ( TOKEN.len == strlen( TOKEN_HEAD ) )
 								strcat( TOKEN.c, argv[t+1] );
 							else
@@ -512,8 +522,12 @@ get_id( int argc, char ** argv, CURL * curl )
 								else
 									snprintf( TOKEN.c, TOKEN.bufsize, "%s%s", TOKEN_HEAD, argv[t+1] );
 							}
+
 							break;
+						}
+
 						case 'n':
+						{
 							switch( argv[t][2] )
 							{
 								case 'p': types.pictr = 0; break;
@@ -521,8 +535,12 @@ get_id( int argc, char ** argv, CURL * curl )
 								case 'v': types.video = 0; break;
 								default:  help_print(); return 0;
 							}
+
 							break;
+						}
+
 						case 'y':
+						{
 							switch( argv[t][2] )
 							{
 								case 'p': types.pictr = 1; break;
@@ -530,14 +548,26 @@ get_id( int argc, char ** argv, CURL * curl )
 								case 'v': types.video = 1; break;
 								default:  help_print(); return 0;
 							}
+
 							break;
-						case 'h': help_print(); return 0;
-						default:  puts( "Invalid argument." ); return 0;
+						}
+
+						case 'h':
+						{
+							help_print();
+							return 0;
+						}
+
+						default:
+						{
+							puts( "Invalid argument." );
+							return 0;
+						}
 					}
 				if ( ( t == argc - 1 ) && ( acc.usr_ok == 1 ) && ( acc.grp_ok == 1 ) )
 				{
-					user( argv[t], curl );
-					group( argv[t], curl );
+					user(argv[t]);
+					group(argv[t]);
 				}
 			}
 
@@ -569,7 +599,7 @@ get_id( int argc, char ** argv, CURL * curl )
 }
 
 void
-get_albums_files( size_t arr_size, char * idpath, CURL * curl )
+get_albums_files( size_t arr_size, char * idpath )
 {
 	char alchar[2048];
 	char dirchar[4096];
@@ -621,7 +651,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				/* creating request */
 				snprintf( url, 2048, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
 				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN.c, API_VER );
-				vk_get_request( url, curl, &cf );
+				vk_get_request( url, &cf );
 
 				/* creating album directory */
 				fix_filename(alchar);
@@ -652,7 +682,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 				items = json_object_get( rsp, "items" );
 				json_array_foreach( items, index, el )
 				{
-					dl_photo( dirchar, curpath, el, curl, NULL, (long long) index + offset * LIMIT_A + 1, -1 );
+					dl_photo( dirchar, curpath, el, NULL, (long long) index + offset * LIMIT_A + 1, -1 );
 				}
 
 				json_decref(json);
@@ -664,7 +694,7 @@ get_albums_files( size_t arr_size, char * idpath, CURL * curl )
 }
 
 void
-get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long long post_id  )
+get_comments( char * dirpath, char * filepath, FILE * logfile, long long post_id  )
 {
 	char url[2048];
 	long long offset = 0;
@@ -677,7 +707,7 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 		snprintf( url, 2048, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN.c, API_VER );
 
-		vk_get_request( url, curl, &cf );
+		vk_get_request( url, &cf );
 
 		/* Parsing json */
 		json_t * json;
@@ -728,7 +758,7 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 			json_t * att_json;
 			att_json = json_object_get( el, "attachments" );
 			if ( att_json )
-				parse_attachments( dirpath, filepath, att_json, curl, logfile, post_id, c_id );
+				parse_attachments( dirpath, filepath, att_json, logfile, post_id, c_id );
 		}
 
 		json_decref(json);
@@ -739,7 +769,7 @@ get_comments( char * dirpath, char * filepath, CURL * curl, FILE * logfile, long
 }
 
 void
-get_wall( char * idpath, CURL * curl )
+get_wall( char * idpath )
 {
 	/* Char allocation */
 	char posts_path[2048];
@@ -764,7 +794,7 @@ get_wall( char * idpath, CURL * curl )
 
 		snprintf( url, 2048, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN.c, API_VER );
-		vk_get_request( url, curl, &cf );
+		vk_get_request( url, &cf );
 
 		/* Parsing json */
 		json_t * json;
@@ -813,7 +843,7 @@ get_wall( char * idpath, CURL * curl )
 			json_t * att_json;
 			att_json = json_object_get( el, "attachments" );
 			if ( att_json )
-				parse_attachments( curpath, attach_path, att_json, curl, posts, p_id, -1 );
+				parse_attachments( curpath, attach_path, att_json, posts, p_id, -1 );
 
 			/* Searching for comments */
 			json_t * comments;
@@ -825,7 +855,7 @@ get_wall( char * idpath, CURL * curl )
 				{
 					fprintf( posts, "COMMENTS: %lld\n", comm_count );
 					if (types.comts == 1)
-						get_comments( curpath, attach_path, curl, posts, p_id );
+						get_comments( curpath, attach_path, posts, p_id );
 				}
 			}
 
@@ -843,7 +873,7 @@ get_wall( char * idpath, CURL * curl )
 					json_t * rep_att_json;
 					rep_att_json = json_object_get( rep_elem, "attachments" );
 					if ( rep_att_json )
-						parse_attachments( curpath, attach_path, rep_att_json, curl, posts, p_id, -1 );
+						parse_attachments( curpath, attach_path, rep_att_json, posts, p_id, -1 );
 				}
 			}
 
@@ -860,7 +890,7 @@ get_wall( char * idpath, CURL * curl )
 }
 
 void
-get_docs( char * idpath, CURL * curl )
+get_docs( char * idpath )
 {
 	struct crl_st cf;
 	char dirpath[2048];
@@ -875,7 +905,7 @@ get_docs( char * idpath, CURL * curl )
 	/* Sending API request docs.get */
 	char url[2048];
 	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
-	vk_get_request( url, curl, &cf );
+	vk_get_request( url, &cf );
 
 	/* parsing json */
 	json_t * json;
@@ -907,14 +937,14 @@ get_docs( char * idpath, CURL * curl )
 	json_array_foreach( items, index, el )
 	{
 		if ( index != 0 )
-			dl_document( dirpath, doc_path, el, curl, NULL, -1, -1 );
+			dl_document( dirpath, doc_path, el, NULL, -1, -1 );
 	}
 
 	json_decref(json);
 }
 
 void
-get_friends( char * idpath, CURL * curl )
+get_friends( char * idpath )
 {
 	struct crl_st cf;
 	char outfl[2048];
@@ -925,7 +955,7 @@ get_friends( char * idpath, CURL * curl )
 	char url[2048];
 	snprintf( url, 2048, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
 	         REQ_HEAD, acc.id, TOKEN.c, API_VER );
-	vk_get_request( url, curl, &cf );
+	vk_get_request( url, &cf );
 
 	/* parsing json */
 	json_t * json;
@@ -963,7 +993,7 @@ get_friends( char * idpath, CURL * curl )
 }
 
 void
-get_groups( char * idpath, CURL * curl )
+get_groups( char * idpath )
 {
 	struct crl_st cf;
 	char outfl[2048];
@@ -973,7 +1003,7 @@ get_groups( char * idpath, CURL * curl )
 
 	char url[2048];
 	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
-	vk_get_request( url, curl, &cf );
+	vk_get_request( url, &cf );
 
 	/* parsing json */
 	json_t * json;
@@ -1012,7 +1042,7 @@ get_groups( char * idpath, CURL * curl )
 }
 
 void
-get_videos( char * idpath, CURL * curl )
+get_videos( char * idpath )
 {
 	char url[2048];
 	char dirpath[2048];
@@ -1040,7 +1070,7 @@ get_videos( char * idpath, CURL * curl )
 		/* creating request */
 		snprintf( url, 2048, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
 		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN.c, API_VER );
-		vk_get_request( url, curl, &cf );
+		vk_get_request( url, &cf );
 
 		/* JSON init */
 		json_t * json;
@@ -1074,7 +1104,7 @@ get_videos( char * idpath, CURL * curl )
 		items = json_object_get( rsp, "items" );
 		json_array_foreach( items, index, el )
 		{
-			dl_video( dirpath, vidpath, el, curl, vid_log, -1, -1 );
+			dl_video( dirpath, vidpath, el, vid_log, -1, -1 );
 		}
 
 		json_decref(json);

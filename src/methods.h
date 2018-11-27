@@ -40,26 +40,26 @@ struct data_album * albums;
 
 const char * js_get_str        ( json_t *, char * );
 int          readable_date     ( long long, FILE * );
-long long    get_id            ( int, char **, CURL * );
+long long    get_id            ( int, char ** );
 long long    js_get_int        ( json_t *, char * );
-short        group             ( char *, CURL * );
-short        user              ( char *, CURL * );
-size_t       get_albums        ( CURL * );
+short        group             ( char * );
+short        user              ( char * );
+size_t       get_albums        ( void );
 void         api_request_pause ( void );
 void         prepare           ( void );
-void         dl_document       ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
-void         dl_photo          ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
-void         dl_video          ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
+void         dl_document       ( char *, char *, json_t *, FILE *, long long, long long );
+void         dl_photo          ( char *, char *, json_t *, FILE *, long long, long long );
+void         dl_video          ( char *, char *, json_t *, FILE *, long long, long long );
 void         fix_filename      ( char * );
-void         get_albums_files  ( size_t, char *, CURL * );
-void         get_comments      ( char *, char *, CURL *, FILE *, long long );
-void         get_docs          ( char *, CURL * );
-void         get_friends       ( char *, CURL * );
-void         get_groups        ( char *, CURL * );
-void         get_videos        ( char *, CURL * );
-void         get_wall          ( char *, CURL * );
+void         get_albums_files  ( size_t, char * );
+void         get_comments      ( char *, char *, FILE *, long long );
+void         get_docs          ( char * );
+void         get_friends       ( char * );
+void         get_groups        ( char * );
+void         get_videos        ( char * );
+void         get_wall          ( char * );
 void         help_print        ( void );
-void         parse_attachments ( char *, char *, json_t *, CURL *, FILE *, long long, long long );
+void         parse_attachments ( char *, char *, json_t *, FILE *, long long, long long );
 
 
 #endif

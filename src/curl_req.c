@@ -10,6 +10,7 @@
 
 #include "curl_req.h"
 
+CURL * curl;
 
 /* terminal width */
 unsigned
@@ -33,14 +34,14 @@ utf8_char_offset( const char * input )
 		if ( (input[i] & 0xC0) != 0x80 )
 			char_count++;
 
-	return (bytelen - char_count)/2;
+	return ( bytelen - char_count ) / 2;
 }
 
 size_t
 crl_callback( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 {
 	size_t rsize = wk_nmemb * wk_size;
-	struct crl_st * p = ( struct crl_st * ) upoint;
+	struct crl_st * p = (struct crl_st *)upoint;
 
 	/* allocation for new size */
 	p->payload = realloc( p->payload, p->size + rsize + 1 );
@@ -58,7 +59,7 @@ crl_callback( void * content, size_t wk_size, size_t wk_nmemb, void * upoint )
 }
 
 CURLcode
-crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
+crl_fetch( const char * url, struct crl_st * fetch_str )
 {
 	CURLcode code;
 
@@ -68,12 +69,12 @@ crl_fetch( CURL * hc, const char * url, struct crl_st * fetch_str )
 		return CURLE_FAILED_INIT;
 	}
 
-	curl_easy_setopt( hc, CURLOPT_URL, url );
-	curl_easy_setopt( hc, CURLOPT_WRITEFUNCTION, crl_callback );
-	curl_easy_setopt( hc, CURLOPT_WRITEDATA, ( void * ) fetch_str );
-	curl_easy_setopt( hc, CURLOPT_USERAGENT, "libcurl-agent/1.0" );
-	curl_easy_setopt( hc, CURLOPT_VERBOSE, CRL_VERBOSITY );
-	code = curl_easy_perform( hc );
+	curl_easy_setopt( curl, CURLOPT_URL, url );
+	curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, crl_callback );
+	curl_easy_setopt( curl, CURLOPT_WRITEDATA, ( void * ) fetch_str );
+	curl_easy_setopt( curl, CURLOPT_USERAGENT, "libcurl-agent/1.0" );
+	curl_easy_setopt( curl, CURLOPT_VERBOSE, CRL_VERBOSITY );
+	code = curl_easy_perform(curl);
 	return code;
 }
 
@@ -85,46 +86,48 @@ write_file( void * ptr, size_t size, size_t nmemb, FILE * stream )
 }
 
 void
-vk_get_request( const char * url, CURL * hc, struct crl_st * cf )
+vk_get_request( const char * url, struct crl_st * cf )
 {
 	/* struct initialiisation */
-	CURLcode code;
 	cf->size = 0;
 	cf->payload = malloc(1);
 
 	/* fetching an answer */
-	curl_easy_reset( hc );
-	code = crl_fetch( hc, url, cf );
+	curl_easy_reset(curl);
+	CURLcode code = crl_fetch( url, cf );
 
 	/* checking result */
 	if ( code != CURLE_OK || cf->size < 1 )
-		fprintf( stderr, "GET error: %s\n", curl_easy_strerror( code ) );
+		fprintf( stderr, "GET error: %s\n", curl_easy_strerror(code) );
 	if ( !cf->payload )
-		fprintf( stderr, "Callback is empty, nothing to do here\n" );
+		fprintf( stderr, "%s", "Callback is empty, nothing to do here\n" );
 }
 
 int
 progress_func( void * ptr, double todl_total, double dl_ed, double undef_a, double undef_b )
 {
-	(void) undef_a;
-	(void) undef_b;
-	(void) ptr;
+	(void)undef_a;
+	(void)undef_b;
+	(void)ptr;
 
 	double percentage = 0;
 	if ( todl_total != 0 )
-		percentage = (dl_ed / todl_total) * 100;
+		percentage = ( dl_ed / todl_total ) * 100;
 
-	putchar( ' ' );
-	putchar( '<' );
+	putchar(' ');
+	putchar('<');
+
 	for ( unsigned char i = 0; i < 100; i += 5 )
 	{
 		if ( percentage > i )
-			printf( "▓" );
+			printf("%s", "▓");
 		else
-			putchar( ' ' );
+			putchar(' ');
 	}
+
 	printf( "> [%03.2f%%] %.1f/%.1f KiB\r\b", percentage, dl_ed/KIBI, todl_total/KIBI );
-	fflush( stdout );
+	fflush(stdout);
+
 	return 0;
 }
 
@@ -145,7 +148,7 @@ cp_file( const char * to, const char * from )
 
 	while ( nread = read( fd_from, buf, sizeof buf ), nread > 0 )
 	{
-		char *out_ptr = buf;
+		char * out_ptr = buf;
 		ssize_t nwritten;
 
 		do
@@ -170,38 +173,42 @@ cp_file( const char * to, const char * from )
 			fd_to = -1;
 			goto cp_func_out_error;
 		}
-		close( fd_from );
+
+		close(fd_from);
 
 		/* Success! */
 		return 0;
 	}
 
 cp_func_out_error:
-	close( fd_from );
+	close(fd_from);
+
 	if ( fd_to >= 0 )
-		close( fd_to );
+		close(fd_to);
 	return -1;
 }
 
 size_t
-vk_get_file( const char * url, const char * filepath, CURL * curl )
+vk_get_file( const char * url, const char * filepath )
 {
 	if ( curl )
 	{
-		unsigned spaces_offset = utf8_char_offset( filepath );
+		unsigned spaces_offset = utf8_char_offset(filepath);
 		unsigned term_width = get_width();
+
 		/* skip downloading if file exists */
 		errno = 0;
 		long long file_size = 0;
 		int err;
 		FILE * fr = fopen( filepath, "r" );
 		err = errno;
+
 		if ( fr != NULL )
 		{
-			fclose( fr );
+			fclose(fr);
 			struct stat fst;
-			if (stat( filepath, &fst ) != -1 )
-				file_size = (long long) fst.st_size;
+			if (  stat( filepath, &fst ) != -1 )
+				file_size = (long long)fst.st_size;
 
 			if ( file_size > 0 )
 			{
@@ -209,15 +216,18 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 				while ( spaces_offset > 0 )
 				{
 					--spaces_offset;
-					putchar( ' ' );
+					putchar(' ');
 				}
-				printf( "\b\b\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n"  );
+
+				printf( "%s", "\b\b\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n" );
+
 				return 0;
 			}
 		}
+
 		if ( err == ENOENT || file_size == 0 )
 		{
-			fflush( stdout );
+			fflush(stdout);
 			FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
 			curl_easy_setopt( curl, CURLOPT_URL, url );
 			curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_file );
@@ -228,15 +238,16 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 			curl_easy_setopt( curl, CURLOPT_NOPROGRESS, 0 );
 			curl_easy_setopt( curl, CURLOPT_PROGRESSFUNCTION, progress_func );
 			CURLcode code;
-			code = curl_easy_perform( curl );
+			code = curl_easy_perform(curl);
 
 			if ( code != CURLE_OK )
 			{
-				fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror( code ), url );
+				fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror(code), url );
 				return 1;
 			}
-			curl_easy_reset( curl );
-			fclose( fw );
+
+			curl_easy_reset(curl);
+			fclose(fw);
 			cp_file( filepath, TMP_CURL_FILENAME );
 
 			printf( "\r\b%-*s", term_width, filepath );
@@ -245,8 +256,7 @@ vk_get_file( const char * url, const char * filepath, CURL * curl )
 				--spaces_offset;
 				putchar(' ');
 			}
-			printf( "\b\b\b\b\b\b\b\033[01;32m[OK]\033[00m\n" );
-
+			printf( "%s", "\b\b\b\b\b\b\b\033[01;32m[OK]\033[00m\n" );
 		}
 	}
 

@@ -13,7 +13,7 @@ int
 main( int argc, char ** argv )
 {
 	/* curl handler initialisatiion */
-	CURL * curl;
+	extern CURL * curl;
 	curl = curl_easy_init();
 	if ( !curl )
 	{
@@ -30,7 +30,7 @@ main( int argc, char ** argv )
 
 	/* Checking id */
 	prepare();
-	long long id = get_id( argc, argv, curl );
+	long long id = get_id( argc, argv );
 	if ( id == 0 )
 		return 2;
 
@@ -54,47 +54,49 @@ main( int argc, char ** argv )
 	}
 
 	/* Creating dir for current id */
-	fix_filename( output_dir );
+	fix_filename(output_dir);
 	if ( mkdir( output_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
+
 	char name_dsc_path[BUFSIZ];
 	snprintf( name_dsc_path, BUFSIZ, "%s/%s", output_dir, FILNAME_IDNAME );
+
 	FILE * u_name = fopen( name_dsc_path, "w" );
 	fprintf( u_name, "%s", name_descript );
-	fclose( u_name );
+	fclose(u_name);
 
 	/* Getting wall content */
-	get_wall( output_dir, curl );
+	get_wall(output_dir);
 
 	/* Getting albums content */
 	photos_count = 0;
 	if ( types.pictr == 1 )
 	{
-		size_t arr_size = get_albums( curl );
+		size_t arr_size = get_albums();
 		if ( arr_size > 0 )
 		{
-			get_albums_files( arr_size, output_dir, curl );
-			free( albums );
+			get_albums_files( arr_size, output_dir );
+			free(albums);
 		}
 	}
 
 	/* Getting documents */
 	if ( types.docmt == 1 )
-		get_docs( output_dir, curl );
+		get_docs(output_dir);
 
 	if ( id > 0 )
 	{
 		/* These are fast */
-		get_friends( output_dir, curl );
+		get_friends(output_dir);
 		api_request_pause();
-		get_groups( output_dir, curl );
+		get_groups(output_dir);
 		api_request_pause();
 	}
 
 	if ( types.video == 1 )
-		get_videos( output_dir, curl );
+		get_videos(output_dir);
 
-	curl_easy_cleanup( curl );
+	curl_easy_cleanup(curl);
 	return 0;
 }
