@@ -19,66 +19,54 @@ prepare( void )
 	newstring( &TOKEN, 512 );
 	stringset( &TOKEN, "%s", TOKEN_HEAD );
 
-	sstring CONSTTOKEN;
-	newstring( &CONSTTOKEN, 512 );
-	stringset( &CONSTTOKEN, "%s", CONST_TOKEN );
+	sstring * CONSTTOKEN = construct_string(512);
+	stringset( CONSTTOKEN, "%s", CONST_TOKEN );
 
-	if ( TOKEN.len != CONSTTOKEN.len )
-		stringset( &TOKEN, "%s", CONSTTOKEN.c );
+	if ( TOKEN.len != CONSTTOKEN->len )
+		stringset( &TOKEN, "%s", CONSTTOKEN->c );
 
-	free(CONSTTOKEN.c);
+	free_string(CONSTTOKEN);
 
 	/* Account struct */
-	acc.screenname = malloc(sizeof(sstring));
-	newstring( acc.screenname, 128 );
-
-	acc.usr_fname = malloc(sizeof(sstring));
-	newstring( acc.usr_fname, 128 );
-
-	acc.usr_lname = malloc(sizeof(sstring));
-	newstring( acc.usr_lname, 128 );
-
-	acc.grp_name = malloc(sizeof(sstring));
-	newstring( acc.grp_name, 128 );
-
-	acc.grp_type = malloc(sizeof(sstring));
-	newstring( acc.grp_type, 64 );
+	acc.screenname = construct_string(128);
+	acc.usr_fname = construct_string(128);
+	acc.usr_lname = construct_string(128);
+	acc.grp_name = construct_string(128);
+	acc.grp_type = construct_string(64);
 }
 
 void
 destroy_all( void )
 {
-	free(acc.screenname->c);
-	free(acc.screenname);
-	free(acc.usr_fname->c);
-	free(acc.usr_fname);
-	free(acc.usr_lname->c);
-	free(acc.usr_lname);
-	free(acc.grp_name->c);
-	free(acc.grp_name);
-	free(acc.grp_type->c);
-	free(acc.grp_type);
+	free_string(acc.screenname);
+	free_string(acc.usr_fname);
+	free_string(acc.usr_lname);
+	free_string(acc.grp_name);
+	free_string(acc.grp_type);
 }
 
 int
 make_dir( sstring * s, long long id )
 {
 	/* Naming file metadata */
-	char name_descript[2048];
+	sstring * name_descript = construct_string(2048);
+	int retvalue = 0;
+
 	if ( acc.usr_ok == 0 )
 	{
 		stringset( s, "u_%lld", acc.id );
-		snprintf( name_descript, 2048, "%lld: %s: %s %s\n", id, acc.screenname->c, acc.usr_fname->c, acc.usr_lname->c );
+		stringset( name_descript, "%lld: %s: %s %s\n", id, acc.screenname->c, acc.usr_fname->c, acc.usr_lname->c );
 	}
 	else if ( acc.grp_ok == 0 )
 	{
 		stringset( s, "c_%lld", acc.id );
-		snprintf( name_descript, 2048, "%lld: %s: %s\n", id, acc.screenname->c, acc.grp_name->c );
+		stringset( name_descript, "%lld: %s: %s\n", id, acc.screenname->c, acc.grp_name->c );
 	}
 	else
 	{
 		fprintf( stderr, "Screenname is invalid.\n");
-		return 1;
+		retvalue = 1;
+		goto make_dir_close_mark;
 	}
 
 	/* Creating dir for current id */
@@ -87,37 +75,47 @@ make_dir( sstring * s, long long id )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
-	char name_dsc_path[BUFSIZ];
-	snprintf( name_dsc_path, BUFSIZ, "%s/%s", s->c, FILNAME_IDNAME );
+	sstring * name_dsc_path = construct_string(BUFSIZ);
+	stringset( name_dsc_path, "%s/%s", s->c, FILNAME_IDNAME );
 
-	FILE * u_name = fopen( name_dsc_path, "w" );
-	fprintf( u_name, "%s", name_descript );
+	FILE * u_name = fopen( name_dsc_path->c, "w" );
+	fprintf( u_name, "%s", name_descript->c );
 	fclose(u_name);
 
-	return 0;
+	free_string(name_dsc_path);
+
+	make_dir_close_mark:
+	free_string(name_descript);
+	return retvalue;
 }
 
 int
 readable_date( long long epoch, FILE * log )
 {
-	char date_invoke[512];
-	char date_result[512];
-	snprintf( date_invoke, 512, "date --date='@%lld'", epoch );
+	sstring * date_invoke = construct_string(512);
+	sstring * date_result = construct_string(512);
+	int retvalue = 0;
+
+	stringset( date_invoke, "date --date='@%lld'", epoch );
 
 	FILE * piped;
-	piped = popen( date_invoke, "r" );
+	piped = popen( date_invoke->c, "r" );
 	if ( piped == NULL )
 	{
-		snprintf( date_result, 512, "%s", "date get failed" );
-		return -1;
+		stringset( date_result, "%s", "date get failed" );
+		retvalue = -1;
+		goto readable_data_ret_mark;
 	}
 
-	fgets( date_result, 512, piped );
+	fgets( date_result->c, date_result->bufsize, piped );
 	pclose(piped);
 
-	fprintf( log, "DATE: %s", date_result );
+	fprintf( log, "DATE: %s", date_result->c );
 
-	return 0;
+	readable_data_ret_mark:
+	free_string(date_invoke);
+	free_string(date_result);
+	return retvalue;
 }
 
 long long
@@ -138,12 +136,13 @@ short
 user( char * name )
 {
 	struct crl_st cf;
-	snprintf( acc.screenname->c, acc.screenname->bufsize, "%s", name );
+	stringset( acc.screenname, "%s", name );
 	acc.usr_ok = 0;
 
-	char url[4096];
-	snprintf( url, 4096, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN.c );
-	vk_get_request( url, &cf );
+	sstring * url = construct_string(4096);
+	stringset( url, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN.c );
+	vk_get_request( url->c, &cf );
+	free_string(url);
 
 	json_t * json;
 	json_error_t json_err;
@@ -172,8 +171,8 @@ user( char * name )
 
 	/* filling struct */
 	acc.id = js_get_int( el, "id" );
-	snprintf( acc.usr_fname->c, acc.usr_fname->bufsize, "%s", js_get_str( el, "first_name" ) );
-	snprintf( acc.usr_lname->c, acc.usr_lname->bufsize, "%s", js_get_str( el, "last_name" ) );
+	stringset( acc.usr_fname, "%s", js_get_str( el, "first_name" ) );
+	stringset( acc.usr_lname, "%s", js_get_str( el, "last_name" ) );
 
 	json_decref(json);
 	return acc.usr_ok;
@@ -184,11 +183,12 @@ group( char * name )
 {
 	struct crl_st cf;
 	acc.grp_ok = 0;
-	snprintf( acc.screenname->c, acc.screenname->bufsize, "%s", name );
+	stringset( acc.screenname, "%s", name );
 
-	char url[4096];
-	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN.c );
-	vk_get_request( url, &cf );
+	sstring * url = construct_string(4096);
+	stringset( url, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN.c );
+	vk_get_request( url->c, &cf );
+	free_string(url);
 
 	json_t * json;
 	json_error_t json_err;
@@ -217,8 +217,8 @@ group( char * name )
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 	acc.id = - js_get_int( el, "id" );
-	snprintf( acc.grp_name->c, acc.grp_name->bufsize, "%s", js_get_str( el, "name" ) );
-	snprintf( acc.grp_type->c, acc.grp_type->bufsize, "%s", js_get_str( el, "type" ) );
+	stringset( acc.grp_name, "%s", js_get_str( el, "name" ) );
+	stringset( acc.grp_type, "%s", js_get_str( el, "type" ) );
 
 	json_decref(json);
 	return acc.grp_ok;
@@ -227,12 +227,9 @@ group( char * name )
 void
 fix_filename( char * dirty )
 {
-	unsigned i;
-	for ( i = 0; dirty[i] != '\0'; ++i )
-	{
+	for ( unsigned i = 0; dirty[i] != '\0'; ++i )
 		if ( ( ( dirty[i] & 0xC0 ) != 0x80 ) && ( dirty[i] == '/' || dirty[i] == '\\' ) )
 			dirty[i] = '_';
-	}
 }
 
 void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
@@ -417,7 +414,7 @@ parse_attachments( char * dirpath, char * filepath, json_t * input_json, FILE * 
 		{
 			output_json = json_object_get( att_elem, data_type[1] );
 			fprintf( logfile, "ATTACH: LINK_URL: %s\nATTACH: LINK_DSC: %s\n",
-			         js_get_str( output_json, "url" ), js_get_str( output_json, "description" ) );
+			    js_get_str( output_json, "url" ), js_get_str( output_json, "description" ) );
 		}
 
 		/* If doc: 2 */
@@ -470,10 +467,10 @@ get_albums()
 		addit_request[0] = '\0';
 
 	/* getting response */
-	char url[4096];
-	snprintf( url, 4096, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
-	         REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request );
-	vk_get_request( url, &cf );
+	sstring * url = construct_string(4096);
+	stringset( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s", REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request );
+	vk_get_request( url->c, &cf );
+	free_string(url);
 
 	/* parsing json */
 	json_t * json;
@@ -587,9 +584,9 @@ get_id( int argc, char ** argv )
 							{
 								/* Anonymous access */
 								if ( atoi(argv[t+1]) == 0 )
-									snprintf( TOKEN.c, TOKEN.bufsize, "%c", '\0' );
+									stringset( &TOKEN, "%c", '\0' );
 								else
-									snprintf( TOKEN.c, TOKEN.bufsize, "%s%s", TOKEN_HEAD, argv[t+1] );
+									stringset( &TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
 							}
 
 							break;
@@ -773,7 +770,7 @@ get_albums_files( size_t arr_size, char * idpath )
 void
 get_comments( char * dirpath, char * filepath, FILE * logfile, long long post_id  )
 {
-	char url[2048];
+	sstring * url = construct_string(4096);
 	long long offset = 0;
 	long long posts_count = 0;
 
@@ -781,10 +778,10 @@ get_comments( char * dirpath, char * filepath, FILE * logfile, long long post_id
 	{
 		struct crl_st cf;
 		/* Forming request */
-		snprintf( url, 2048, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
+		stringset( url, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN.c, API_VER );
 
-		vk_get_request( url, &cf );
+		vk_get_request( url->c, &cf );
 
 		/* Parsing json */
 		json_t * json;
@@ -843,6 +840,8 @@ get_comments( char * dirpath, char * filepath, FILE * logfile, long long post_id
 		api_request_pause();
 	}
 	while( posts_count - offset > 0 );
+
+	free_string(url);
 }
 
 void

@@ -10,8 +10,10 @@ typedef struct string
 	char * c;
 } sstring;
 
-void newstring ( sstring *, int );
+sstring * construct_string ( size_t );
+void newstring ( sstring *, size_t );
 void calclen ( sstring * );
 void stringset ( sstring *, const char *, ... );
+void free_string ( sstring * );
 
 #endif

@@ -11,12 +11,31 @@ calclen ( sstring * s )
 }
 
 void
-newstring ( sstring * s, int size )
+newstring ( sstring * s, size_t size )
 {
 	s->bufsize = size;
 	s->len = 0;
 	s->c = malloc(s->bufsize);
 	s->c[0] = '\0';
+}
+
+sstring *
+construct_string ( size_t size )
+{
+	sstring * s = malloc(sizeof(sstring));
+	s->bufsize = size;
+	s->len = 0;
+	s->c = malloc(s->bufsize);
+	s->c[0] = '\0';
+
+	return s;
+}
+
+void
+free_string ( sstring * s )
+{
+	free(s->c);
+	free(s);
 }
 
 void
