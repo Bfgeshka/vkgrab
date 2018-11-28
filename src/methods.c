@@ -1023,15 +1023,16 @@ void
 get_friends( char * idpath )
 {
 	struct crl_st cf;
-	char outfl[2048];
 
-	snprintf( outfl, 2048, "%s/%s", idpath, FILNAME_FRIENDS );
-	FILE * outptr = fopen( outfl, "w" );
+	sstring * outfl = construct_string(2048);
+	stringset( outfl, "%s/%s", idpath, FILNAME_FRIENDS );
+	FILE * outptr = fopen( outfl->c, "w" );
+	free_string(outfl);
 
-	char url[2048];
-	snprintf( url, 2048, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
-	         REQ_HEAD, acc.id, TOKEN.c, API_VER );
-	vk_get_request( url, &cf );
+	sstring * url = construct_string(4096);
+	stringset( url, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
+	vk_get_request( url->c, &cf );
+	free_string(url);
 
 	/* parsing json */
 	json_t * json;
@@ -1072,14 +1073,16 @@ void
 get_groups( char * idpath )
 {
 	struct crl_st cf;
-	char outfl[2048];
 
-	snprintf( outfl, 2048, "%s/%s", idpath, FILNAME_GROUPS );
-	FILE * outptr = fopen( outfl, "w" );
+	sstring * outfl = construct_string(2048);
+	stringset( outfl, "%s/%s", idpath, FILNAME_GROUPS );
+	FILE * outptr = fopen( outfl->c, "w" );
+	free_string(outfl);
 
-	char url[2048];
-	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
-	vk_get_request( url, &cf );
+	sstring * url = construct_string(4096);
+	stringset( url, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
+	vk_get_request( url->c, &cf );
+	free_string(url);
 
 	/* parsing json */
 	json_t * json;
