@@ -180,7 +180,8 @@ cp_file( const char * to, const char * from )
 		return 0;
 	}
 
-cp_func_out_error:
+	/* Close descriptors */
+	cp_func_out_error:
 	close(fd_from);
 
 	if ( fd_to >= 0 )

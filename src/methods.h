@@ -2,21 +2,23 @@
 #define METHODS_H_
 
 #include <jansson.h>
+#include "utils.h"
 #include "../config.h"
 
 struct data_account
 {
 	long long id;
-	char screenname[BUFSIZ/2];
-	char usr_fname[BUFSIZ/2];
-	char usr_lname[BUFSIZ/2];
-	char grp_name[BUFSIZ/2];
-	char grp_type[BUFSIZ/4];
+	sstring * screenname;
+	sstring * usr_fname;
+	sstring * usr_lname;
+	sstring * grp_name;
+	sstring * grp_type;
 
 	/* 0 means ok: */
 	short grp_ok;
 	short usr_ok;
-} acc;
+} accr;
+
 
 struct data_album
 {

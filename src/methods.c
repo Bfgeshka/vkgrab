@@ -11,20 +11,39 @@
 #include "utils.h"
 
 struct string TOKEN;
+struct data_account * acc;
 
 void
 prepare( void )
 {
-	TOKEN = newstring(512);
+	/* Token */
+	newstring( &TOKEN, 512 );
 	stringset( &TOKEN, TOKEN_HEAD );
 
-	struct string CONSTTOKEN = newstring(512);
+	sstring CONSTTOKEN;
+	newstring( &CONSTTOKEN, 512 );
 	stringset( &CONSTTOKEN, CONST_TOKEN );
 
 	if ( TOKEN.len != CONSTTOKEN.len )
 		snprintf( TOKEN.c, TOKEN.bufsize, "%s", CONSTTOKEN.c );
 
 	free(CONSTTOKEN.c);
+
+	/* Account struct */
+	acc = &accr;
+	puts("123");
+	newstring( acc->screenname, 128 );
+	puts("123");
+	newstring( acc->usr_fname, 128 );
+	newstring( acc->usr_lname, 128 );
+	newstring( acc->grp_name, 128 );
+	newstring( acc->grp_type, 64 );
+}
+
+void
+make_dir( void )
+{
+	//
 }
 
 int
@@ -68,8 +87,8 @@ short
 user( char * name )
 {
 	struct crl_st cf;
-	snprintf( acc.screenname, BUFSIZ/2, "%s", name );
-	acc.usr_ok = 0;
+	snprintf( acc->screenname->c, acc->screenname->bufsize, "%s", name );
+	acc->usr_ok = 0;
 
 	char url[4096];
 	snprintf( url, 4096, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN.c );
@@ -84,8 +103,8 @@ user( char * name )
 	{
 		fprintf( stderr, "JSON users.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
 		json_decref(json);
-		acc.usr_ok = -1;
-		return acc.usr_ok;
+		acc->usr_ok = -1;
+		return acc->usr_ok;
 	}
 
 	/* simplifying json */
@@ -93,28 +112,28 @@ user( char * name )
 	rsp = json_object_get( json, "response" );
 	if ( !rsp )
 	{
-		fprintf( stderr, "No such user (%s).\n", acc.screenname );
-		acc.usr_ok = -2;
-		return acc.usr_ok;
+		fprintf( stderr, "No such user (%s).\n", acc->screenname->c );
+		acc->usr_ok = -2;
+		return acc->usr_ok;
 	}
 	json_t * el;
 	el = json_array_get( rsp, 0 );
 
 	/* filling struct */
-	acc.id = js_get_int( el, "id" );
-	snprintf( acc.usr_fname, 512, "%s", js_get_str( el, "first_name" ) );
-	snprintf( acc.usr_lname, 512, "%s", js_get_str( el, "last_name" ) );
+	acc->id = js_get_int( el, "id" );
+	snprintf( acc->usr_fname->c, acc->usr_fname->bufsize, "%s", js_get_str( el, "first_name" ) );
+	snprintf( acc->usr_lname->c, acc->usr_lname->bufsize, "%s", js_get_str( el, "last_name" ) );
 
 	json_decref(json);
-	return acc.usr_ok;
+	return acc->usr_ok;
 }
 
 short
 group( char * name )
 {
 	struct crl_st cf;
-	acc.grp_ok = 0;
-	snprintf( acc.screenname, BUFSIZ/2, "%s", name );
+	acc->grp_ok = 0;
+	snprintf( acc->screenname->c, acc->screenname->bufsize, "%s", name );
 
 	char url[4096];
 	snprintf( url, 4096, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN.c );
@@ -129,8 +148,8 @@ group( char * name )
 	{
 		fprintf( stderr, "JSON groups.getById parsing error.\n%d:%s\n", json_err.line, json_err.text );
 		json_decref(json);
-		acc.grp_ok = -1;
-		return acc.grp_ok;
+		acc->grp_ok = -1;
+		return acc->grp_ok;
 	}
 
 	/* simplifying json */
@@ -138,20 +157,20 @@ group( char * name )
 	rsp = json_object_get( json, "response" );
 	if ( !rsp )
 	{
-		fprintf( stderr, "No such group (%s).\n", acc.screenname );
-		acc.grp_ok = -2;
-		return acc.grp_ok;
+		fprintf( stderr, "No such group (%s).\n", acc->screenname->c );
+		acc->grp_ok = -2;
+		return acc->grp_ok;
 	}
 
 	/* filling struct */
 	json_t * el;
 	el = json_array_get( rsp, 0 );
-	acc.id = - js_get_int( el, "id" );
-	snprintf( acc.grp_name, 512, "%s", js_get_str( el, "name" ) );
-	snprintf( acc.grp_type, 512, "%s", js_get_str( el, "type" ) );
+	acc->id = - js_get_int( el, "id" );
+	snprintf( acc->grp_name->c, acc->grp_name->bufsize, "%s", js_get_str( el, "name" ) );
+	snprintf( acc->grp_type->c, acc->grp_type->bufsize, "%s", js_get_str( el, "type" ) );
 
 	json_decref(json);
-	return acc.grp_ok;
+	return acc->grp_ok;
 }
 
 void
@@ -205,12 +224,12 @@ dl_photo( char * dirpath, char * filepath, json_t * photo_el, FILE * log, long l
 	if ( post_id > 0 )
 	{
 		if ( comm_id > 0 )
-			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.jpg", dirpath, acc.id, post_id, comm_id, pid );
+			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.jpg", dirpath, acc->id, post_id, comm_id, pid );
 		else
-			sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, acc.id, post_id, pid );
+			sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, acc->id, post_id, pid );
 	}
 	else
-		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, acc.id, pid );
+		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, acc->id, pid );
 
 	vk_get_file( json_string_value( biggest ), filepath );
 }
@@ -226,16 +245,16 @@ dl_document( char * dirpath, char * filepath, json_t * doc_el, FILE * log, long 
 		if ( comm_id > 0 )
 		{
 			fprintf( log, "COMMENT %lld: ATTACH: DOCUMENT %lld (\"%s\")\n", comm_id, did, js_get_str( doc_el, "title" ) );
-			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.%s", dirpath, acc.id, post_id, comm_id, did, js_get_str( doc_el, "ext" ) );
+			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.%s", dirpath, acc->id, post_id, comm_id, did, js_get_str( doc_el, "ext" ) );
 		}
 		else
 		{
 			fprintf( log, "ATTACH: DOCUMENT FOR %lld: %lld (\"%s\")\n", post_id, did, js_get_str( doc_el, "title" ) );
-			sprintf( filepath, "%s/%lld_%lld_%lld.%s", dirpath, acc.id, post_id, did, js_get_str( doc_el, "ext" ) );
+			sprintf( filepath, "%s/%lld_%lld_%lld.%s", dirpath, acc->id, post_id, did, js_get_str( doc_el, "ext" ) );
 		}
 	}
 	else
-		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, acc.id, did, js_get_str( doc_el, "ext" ) );
+		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, acc->id, did, js_get_str( doc_el, "ext" ) );
 
 	vk_get_file( js_get_str( doc_el, "url" ), filepath );
 }
@@ -394,7 +413,7 @@ get_albums()
 	struct crl_st cf;
 
 	/* Wall album is hidden for groups */
-	if ( acc.id < 0 )
+	if ( acc->id < 0 )
 		snprintf( addit_request, 2048, "%s", "&album_ids=-7" );
 	else
 		addit_request[0] = '\0';
@@ -402,7 +421,7 @@ get_albums()
 	/* getting response */
 	char url[4096];
 	snprintf( url, 4096, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s",
-	         REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request );
+	         REQ_HEAD, acc->id, TOKEN.c, API_VER, addit_request );
 	vk_get_request( url, &cf );
 
 	/* parsing json */
@@ -460,8 +479,8 @@ get_albums()
 long long
 get_id( int argc, char ** argv )
 {
-	acc.usr_ok = 1;
-	acc.grp_ok = 1;
+	acc->usr_ok = 1;
+	acc->grp_ok = 1;
 
 	switch( argc )
 	{
@@ -483,7 +502,7 @@ get_id( int argc, char ** argv )
 			else
 			{
 				user(argv[1]);
-				if ( acc.usr_ok != 0 )
+				if ( acc->usr_ok != 0 )
 					group(argv[1]);
 			}
 
@@ -562,7 +581,7 @@ get_id( int argc, char ** argv )
 						default:
 							goto get_id_invalid_arg;
 					}
-				if ( ( t == argc - 1 ) && ( acc.usr_ok == 1 ) && ( acc.grp_ok == 1 ) )
+				if ( ( t == argc - 1 ) && ( acc->usr_ok == 1 ) && ( acc->grp_ok == 1 ) )
 				{
 					user(argv[t]);
 					group(argv[t]);
@@ -574,17 +593,17 @@ get_id( int argc, char ** argv )
 	}
 
 	/* Info out */
-	if ( acc.grp_ok == 0 )
+	if ( acc->grp_ok == 0 )
 	{
 		printf( "Group: %s (%s).\nGroup ID: %lld.\nType: %s.\n\n",
-		        acc.grp_name, acc.screenname, acc.id, acc.grp_type );
-		return acc.id;
+		    acc->grp_name->c, acc->screenname->c, acc->id, acc->grp_type->c );
+		return acc->id;
 	}
-	else if ( acc.usr_ok == 0 )
+	else if ( acc->usr_ok == 0 )
 	{
 		printf( "User: %s %s (%s).\nUser ID: %lld.\n\n",
-		        acc.usr_fname, acc.usr_lname, acc.screenname, acc.id );
-		return acc.id;
+		    acc->usr_fname->c, acc->usr_lname->c, acc->screenname->c, acc->id );
+		return acc->id;
 	}
 	else
 		goto get_id_print_help;
@@ -657,7 +676,7 @@ get_albums_files( size_t arr_size, char * idpath )
 
 				/* creating request */
 				snprintf( url, 2048, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
-				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN.c, API_VER );
+				         REQ_HEAD, acc->id, albums[i].aid, offset * LIMIT_A, TOKEN.c, API_VER );
 				vk_get_request( url, &cf );
 
 				/* creating album directory */
@@ -712,7 +731,7 @@ get_comments( char * dirpath, char * filepath, FILE * logfile, long long post_id
 		struct crl_st cf;
 		/* Forming request */
 		snprintf( url, 2048, "%s/wall.getComments?owner_id=%lld&extended=0&post_id=%lld&count=%d&offset=%lld%s&v=%s",
-		         REQ_HEAD, acc.id, post_id, LIMIT_C, offset, TOKEN.c, API_VER );
+		         REQ_HEAD, acc->id, post_id, LIMIT_C, offset, TOKEN.c, API_VER );
 
 		vk_get_request( url, &cf );
 
@@ -800,7 +819,7 @@ get_wall( char * idpath )
 		struct crl_st cf;
 
 		snprintf( url, 2048, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
-		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN.c, API_VER );
+		         REQ_HEAD, acc->id, LIMIT_W, offset, TOKEN.c, API_VER );
 		vk_get_request( url, &cf );
 
 		/* Parsing json */
@@ -911,7 +930,7 @@ get_docs( char * idpath )
 
 	/* Sending API request docs.get */
 	char url[2048];
-	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
+	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc->id, TOKEN.c, API_VER );
 	vk_get_request( url, &cf );
 
 	/* parsing json */
@@ -961,7 +980,7 @@ get_friends( char * idpath )
 
 	char url[2048];
 	snprintf( url, 2048, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s",
-	         REQ_HEAD, acc.id, TOKEN.c, API_VER );
+	         REQ_HEAD, acc->id, TOKEN.c, API_VER );
 	vk_get_request( url, &cf );
 
 	/* parsing json */
@@ -1009,7 +1028,7 @@ get_groups( char * idpath )
 	FILE * outptr = fopen( outfl, "w" );
 
 	char url[2048];
-	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
+	snprintf( url, 2048, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc->id, TOKEN.c, API_VER );
 	vk_get_request( url, &cf );
 
 	/* parsing json */
@@ -1076,7 +1095,7 @@ get_videos( char * idpath )
 
 		/* creating request */
 		snprintf( url, 2048, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
-		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN.c, API_VER );
+		         REQ_HEAD, acc->id, offset * LIMIT_V, LIMIT_V, TOKEN.c, API_VER );
 		vk_get_request( url, &cf );
 
 		/* JSON init */

@@ -1,7 +1,7 @@
 CC = cc
 
-SRC = src/main.c src/methods.c src/curl_req.c
-SRC_SND = dirty_tools/${NAME_SND}/main.c dirty_tools/${NAME_SND}/functions.c src/methods.c src/curl_req.c
+SRC = src/main.c src/methods.c src/curl_req.c src/utils.c
+SRC_SND = dirty_tools/${NAME_SND}/main.c dirty_tools/${NAME_SND}/functions.c src/methods.c src/curl_req.c src/utils.c
 OBJS = $(SRC:.c=.o)
 
 NAME = vkgrab

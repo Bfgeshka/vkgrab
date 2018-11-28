@@ -14,6 +14,7 @@ main( int argc, char ** argv )
 {
 	/* curl handler initialisatiion */
 	extern CURL * curl;
+	extern struct data_account * acc;
 	curl = curl_easy_init();
 	if ( !curl )
 	{
@@ -37,15 +38,15 @@ main( int argc, char ** argv )
 	/* Naming file metadata */
 	char output_dir[1024];
 	char name_descript[2048];
-	if ( acc.usr_ok == 0 )
+	if ( acc->usr_ok == 0 )
 	{
-		snprintf( output_dir, 1024, "u_%lld", acc.id );
-		snprintf( name_descript, 2048, "%lld: %s: %s %s\n", id, acc.screenname, acc.usr_fname, acc.usr_lname );
+		snprintf( output_dir, 1024, "u_%lld", acc->id );
+		snprintf( name_descript, 2048, "%lld: %s: %s %s\n", id, acc->screenname->c, acc->usr_fname->c, acc->usr_lname->c );
 	}
-	else if ( acc.grp_ok == 0 )
+	else if ( acc->grp_ok == 0 )
 	{
-		snprintf( output_dir, 1024, "c_%lld", acc.id );
-		snprintf( name_descript, 2048, "%lld: %s: %s\n", id, acc.screenname, acc.grp_name );
+		snprintf( output_dir, 1024, "c_%lld", acc->id );
+		snprintf( name_descript, 2048, "%lld: %s: %s\n", id, acc->screenname->c, acc->grp_name->c );
 	}
 	else
 	{
