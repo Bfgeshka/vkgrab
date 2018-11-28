@@ -17,8 +17,7 @@ struct data_account
 	/* 0 means ok: */
 	short grp_ok;
 	short usr_ok;
-} accr;
-
+} acc;
 
 struct data_album
 {
@@ -41,6 +40,7 @@ struct data_album * albums;
 
 const char * js_get_str        ( json_t *, char * );
 int          readable_date     ( long long, FILE * );
+int          make_dir          ( sstring *, long long );
 long long    get_id            ( int, char ** );
 long long    js_get_int        ( json_t *, char * );
 short        group             ( char * );
@@ -52,6 +52,7 @@ void         dl_document       ( char *, char *, json_t *, FILE *, long long, lo
 void         dl_photo          ( char *, char *, json_t *, FILE *, long long, long long );
 void         dl_video          ( char *, char *, json_t *, FILE *, long long, long long );
 void         fix_filename      ( char * );
+void         destroy_all       ( void );
 void         get_albums_files  ( size_t, char * );
 void         get_comments      ( char *, char *, FILE *, long long );
 void         get_docs          ( char * );

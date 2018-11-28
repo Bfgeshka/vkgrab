@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 
 void
 calclen ( sstring * s )
@@ -19,8 +20,12 @@ newstring ( sstring * s, int size )
 }
 
 void
-stringset ( sstring * s, const char * src )
+stringset ( sstring * s, const char * fmt, ... )
 {
-	snprintf( s->c, s->bufsize, "%s", src );
+	va_list args;
+	va_start( args, fmt );
+	vsnprintf( s->c, s->bufsize, fmt, args );
+	va_end(args);
+
 	calclen(s);
 }

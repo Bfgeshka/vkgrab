@@ -12,6 +12,6 @@ typedef struct string
 
 void newstring ( sstring *, int );
 void calclen ( sstring * );
-void stringset ( sstring *, const char * );
+void stringset ( sstring *, const char *, ... );
 
 #endif

@@ -8,13 +8,13 @@
 
 #include "../config.h"
 #include "methods.h"
+#include "utils.h"
 
 int
 main( int argc, char ** argv )
 {
 	/* curl handler initialisatiion */
 	extern CURL * curl;
-	extern struct data_account * acc;
 	curl = curl_easy_init();
 	if ( !curl )
 	{
@@ -35,40 +35,14 @@ main( int argc, char ** argv )
 	if ( id == 0 )
 		return 2;
 
-	/* Naming file metadata */
-	char output_dir[1024];
-	char name_descript[2048];
-	if ( acc->usr_ok == 0 )
-	{
-		snprintf( output_dir, 1024, "u_%lld", acc->id );
-		snprintf( name_descript, 2048, "%lld: %s: %s %s\n", id, acc->screenname->c, acc->usr_fname->c, acc->usr_lname->c );
-	}
-	else if ( acc->grp_ok == 0 )
-	{
-		snprintf( output_dir, 1024, "c_%lld", acc->id );
-		snprintf( name_descript, 2048, "%lld: %s: %s\n", id, acc->screenname->c, acc->grp_name->c );
-	}
-	else
-	{
-		fprintf( stderr, "Screenname is invalid.\n");
+	sstring output_dir;
+	newstring( &output_dir, 256 );
+
+	if ( make_dir( &output_dir, id ) > 0 )
 		return 3;
-	}
-
-	/* Creating dir for current id */
-	fix_filename(output_dir);
-	if ( mkdir( output_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
-		if ( errno != EEXIST )
-			fprintf( stderr, "mkdir() error (%d).\n", errno );
-
-	char name_dsc_path[BUFSIZ];
-	snprintf( name_dsc_path, BUFSIZ, "%s/%s", output_dir, FILNAME_IDNAME );
-
-	FILE * u_name = fopen( name_dsc_path, "w" );
-	fprintf( u_name, "%s", name_descript );
-	fclose(u_name);
 
 	/* Getting wall content */
-	get_wall(output_dir);
+	get_wall(output_dir.c);
 
 	/* Getting albums content */
 	photos_count = 0;
@@ -77,27 +51,29 @@ main( int argc, char ** argv )
 		size_t arr_size = get_albums();
 		if ( arr_size > 0 )
 		{
-			get_albums_files( arr_size, output_dir );
+			get_albums_files( arr_size, output_dir.c );
 			free(albums);
 		}
 	}
 
 	/* Getting documents */
 	if ( types.docmt == 1 )
-		get_docs(output_dir);
+		get_docs(output_dir.c);
 
 	if ( id > 0 )
 	{
 		/* These are fast */
-		get_friends(output_dir);
+		get_friends(output_dir.c);
 		api_request_pause();
-		get_groups(output_dir);
+		get_groups(output_dir.c);
 		api_request_pause();
 	}
 
 	if ( types.video == 1 )
-		get_videos(output_dir);
+		get_videos(output_dir.c);
 
+	free(output_dir.c);
+	destroy_all();
 	curl_easy_cleanup(curl);
 	return 0;
 }
