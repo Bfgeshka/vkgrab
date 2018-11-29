@@ -37,10 +37,10 @@ void
 set_token ( void )
 {
 	/* Token */
-	newstring( &TOKEN, 512 );
+	newstring( &TOKEN, 256 );
 	stringset( &TOKEN, "%s", TOKEN_HEAD );
 
-	sstring * CONSTTOKEN = construct_string(512);
+	sstring * CONSTTOKEN = construct_string(256);
 	stringset( CONSTTOKEN, "%s", CONST_TOKEN );
 
 	if ( TOKEN.len != CONSTTOKEN->len )
@@ -603,15 +603,17 @@ get_id( int argc, char ** argv )
 
 						case 't':
 						{
-							if ( TOKEN.len == strlen(TOKEN_HEAD) )
-								strcat( TOKEN.c, argv[t+1] );
+							if ( argv[t+1] != NULL )
+							{
+								if ( atoi(argv[t+1]) != 0 )
+									stringset( &TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+								else
+									stringset( &TOKEN, "%c", '\0' );
+							}
 							else
 							{
-								/* Anonymous access */
-								if ( atoi(argv[t+1]) == 0 )
-									stringset( &TOKEN, "%c", '\0' );
-								else
-									stringset( &TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
+								fputs( "Bad argument, abort.", stderr );
+								return -1;
 							}
 
 							break;

@@ -58,10 +58,12 @@ group_id( int argc, char ** argv )
 					case 't':
 					{
 						if ( argv[t+1] != NULL )
+						{
 							if ( atoi(argv[t+1]) != 0 )
-								stringset( &TOKEN, "%s%s", TOKEN.c, argv[t+1] );
+								stringset( &TOKEN, "%s%s", TOKEN_HEAD, argv[t+1] );
 							else
 								stringset( &TOKEN, "%c", '\0' );
+						}
 						else
 						{
 							fputs( "Bad argument, abort.", stderr );
@@ -128,9 +130,6 @@ group_memb( long long * ids )
 	size_t index;
 
 	/* Requesting data */
-
-	json_auto_t * rsp;
-
 	do
 	{
 		sstring * url = construct_string(2048);
@@ -148,16 +147,16 @@ group_memb( long long * ids )
 			return -2;
 		}
 
-		rsp = json_object_get( json, "response" );
-	if ( !rsp )
-	{
-		json_t * err_block;
-		err_block = json_object_get( json, "error" );
-		if ( err_block )
-			fprintf( stderr, "Requst error %lld: %s\n", \
-			         js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
-		return -3;
-	}
+		json_auto_t * rsp = json_object_get( json, "response" );
+		if ( !rsp )
+		{
+			json_t * err_block;
+			err_block = json_object_get( json, "error" );
+			if ( err_block )
+				fprintf( stderr, "Requst error %lld: %s\n", \
+					 js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
+			return -3;
+		}
 
 		json = json_object_get( rsp, "items" );
 		json_array_foreach( json, index, rsp )
