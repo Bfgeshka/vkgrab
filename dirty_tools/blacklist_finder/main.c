@@ -4,49 +4,60 @@
 
 #include "./functions.h"
 #include "../../src/methods.h"
-
-/*
- * cc ./main.c ./functions.c -O2 -Wall -Wextra -Wpedantic --std=c99 -D_DEFAULT_SOURCE -ljansson -lcurl -o blacklist_finder
- */
+#include "../../src/utils.h"
 
 int
 main( int argc, char ** argv )
 {
-	grp.curl = curl_easy_init();
+	sstring * output_dir = construct_string(2048);
+	sstring * output_file = construct_string(2048);
+	long long * ids;
+	int retvalue = 0;
 
-/*	check_token();*/
+	grp.name_scrn = construct_string(2048);
+	extern CURL * curl;
+	curl = curl_easy_init();
 
 	int grp_check_value = group_id( argc, argv );
 	if ( grp_check_value == 0 )
-		return 0;
+	{
+		retvalue = 0;
+		goto main_end_mark;
+	}
 	else if ( grp_check_value < 0 )
-		return -1;
+	{
+		retvalue = -1;
+		goto main_end_mark;
+	}
 
-	long long * ids;
 	ids = malloc( sizeof(long long) * grp.sub_count );
 
-	if ( group_memb( ids ) < 0 )
-		return -1;
+	if ( group_memb(ids) < 0 )
+	{
+		retvalue = -2;
+		goto main_end_mark;
+	}
 
-	char output_dir[BUFSIZ];
-	char output_file[BUFSIZ];
-	sprintf( output_dir, "c_%s", grp.name_scrn );
-	if ( mkdir( output_dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+	stringset( output_dir, "c_%s", grp.name_scrn->c );
+	if ( mkdir( output_dir->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 		{
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
-			return -2;
+			retvalue = -3;
+			goto main_end_mark;
 		}
 
 	long long i = grp.sub_count - 1;
 	for ( ; i != 0 ; --i )
 	{
 		printf( "\n[%7lld/%7lld] ", i + 1, grp.sub_count );
-		sprintf( output_file, "%s/u_%lld", output_dir, ids[i] );
+		stringset( output_file, "%s/u_%lld", output_dir->c, ids[i] );
 		user_subs( ids[i], output_file );
-
 	}
 
-	curl_easy_cleanup( grp.curl );
-	return 0;
+	main_end_mark:
+	free_string(output_dir);
+	free_string(output_file);
+	curl_easy_cleanup(curl);
+	return retvalue;
 }

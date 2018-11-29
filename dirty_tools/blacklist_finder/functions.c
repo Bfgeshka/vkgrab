@@ -8,6 +8,7 @@
 #include "../../config.h"
 #include "../../src/curl_req.h"
 #include "../../src/methods.h"
+#include "../../src/utils.h"
 
 char TKN[BUFSIZ] = TOKEN_HEAD;
 
@@ -47,7 +48,7 @@ group_id( int argc, char ** argv )
 		}
 
 		else
-			sprintf( grp.name_scrn, "%s", argv[1] );
+			stringset( grp.name_scrn, "%s", argv[1] );
 	}
 
 	/* Several arguments */
@@ -76,35 +77,25 @@ group_id( int argc, char ** argv )
 			}
 
 			else
-				sprintf( grp.name_scrn, "%s", argv[t] );
+				stringset( grp.name_scrn, "%s", argv[t] );
 		}
 
 	if ( strlen(TKN) != strlen(CONST_TOKEN) )
 		sprintf( TKN, "%s", CONST_TOKEN );
 
 	/* Requesting data */
-	char url[BUFSIZ];
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
-	sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
-	         REQ_HEAD, API_VER, grp.name_scrn, offset, TKN );
+	sstring * url = construct_string(2048);
+	stringset( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
+	    REQ_HEAD, API_VER, grp.name_scrn->c, offset, TKN );
 
-	vk_get_request( url, grp.curl, cf );
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
-
-	/* Parsing json */
-	json_t * json;
-	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json_error_t * json_err = NULL;
+	json_t * json = make_request( url, json_err );
+	free_string(url);
 	if ( !json )
 	{
-		fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		if ( json_err )
+			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err->line, json_err->text );
+
 		return -2;
 	}
 
@@ -115,7 +106,7 @@ group_id( int argc, char ** argv )
 		err_block = json_object_get( json, "error" );
 		if ( err_block )
 			fprintf( stderr, "Requst error %lld: %s\n", \
-			         js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
+			    js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
 		return -3;
 	}
 
@@ -124,7 +115,7 @@ group_id( int argc, char ** argv )
 		grp.sub_count = js_get_int( rsp, "count" );
 		printf( "Subscribers count: %lld\n", grp.sub_count );
 	}
-/*	json_decref(json);*/
+
 	api_request_pause();
 	return 1;
 }
@@ -133,38 +124,27 @@ int
 group_memb( long long * ids )
 {
 	long long offset = 0;
+	size_t index;
 
 	/* Requesting data */
 
 	json_auto_t * rsp;
 
-	size_t index;
 
 	do
 	{
-		char url[BUFSIZ];
-		struct crl_st wk_crl_st;
-		struct crl_st * cf = &wk_crl_st;
-		sprintf( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
-		         REQ_HEAD, API_VER, grp.name_scrn, offset, TKN );
+		sstring * url = construct_string(2048);
+		stringset( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
+		    REQ_HEAD, API_VER, grp.name_scrn->c, offset, TKN );
 
-
-		vk_get_request( url, grp.curl, cf );
-		char * r = malloc( cf->size + 1 );
-		sprintf( r, "%s", cf->payload );
-		r[ cf->size ] = 0;
-		if ( cf->payload != NULL )
-			free( cf->payload );
-
-		/* Parsing json */
-		json_t * json;
-		json_error_t json_err;
-		json = json_loads( r, 0, &json_err );
-		if ( r != NULL )
-			free(r);
+		json_error_t * json_err = NULL;
+		json_t * json = make_request( url, json_err );
+		free_string(url);
 		if ( !json )
 		{
-			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err.line, json_err.text );
+			if ( json_err )
+				fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err->line, json_err->text );
+
 			return -2;
 		}
 
@@ -185,7 +165,6 @@ group_memb( long long * ids )
 			ids[offset + index] = json_integer_value( rsp );
 		}
 
-/*		json_decref(json);*/
 		offset += LIMIT_G;
 		api_request_pause();
 	}
@@ -206,34 +185,22 @@ bf_help_print()
 }
 
 int
-user_subs( long long id, char * output_file )
+user_subs( long long id, sstring * output_file )
 {
-	struct user_numbers un;
-	struct user_numbers * numb = &un;
-	un.offset = 0;
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
+
 	/* Requesting data */
-	char url[BUFSIZ];
-	sprintf( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name,last_seen%s", \
-	         REQ_HEAD, API_VER, id, TKN );
+	sstring * url = construct_string(2048);
+	stringset( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name,last_seen%s", \
+	    REQ_HEAD, API_VER, id, TKN );
 
-	vk_get_request( url, grp.curl, cf );
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
-
-	/* Parsing json */
-	json_t * json;
-	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json_error_t * json_err = NULL;
+	json_t * json = make_request( url, json_err );
+	free_string(url);
 	if ( !json )
 	{
-		fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err.line, json_err.text );
+		if ( json_err )
+			fprintf( stderr, "JSON groups.getMembers parsing error.\n%d:%s\n", json_err->line, json_err->text );
+
 		return -2;
 	}
 
@@ -244,66 +211,57 @@ user_subs( long long id, char * output_file )
 		err_block = json_object_get( json, "error" );
 		if ( err_block )
 			fprintf( stderr, "Requst error %lld: %s\n", \
-			         js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
+			    js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
 		return -3;
 	}
 
-	FILE * logfile = fopen( output_file, "w" );
+	FILE * logfile = fopen( output_file->c, "w" );
 	json_auto_t * json_ar = json_array_get( rsp, 0 );
 	fprintf( logfile, "%s:\"%s %s\"\n", js_get_str( json_ar, "screen_name" ), js_get_str( json_ar, "first_name" ), js_get_str( json_ar, "last_name" ) );
 
 	json_auto_t * lseen = json_object_get( json_ar, "last_seen" );
 	fprintf( logfile, ":ls:%lld\n\n", js_get_int( lseen, "time" ) );
 
+	struct user_numbers numb;
+	numb.offset = 0;
+
 	do
 	{
-		if ( cycle_users( id, numb, logfile ) != 0 )
+		if ( cycle_users( id, &numb, logfile ) != 0 )
 		{
 			fclose(logfile);
 			return -4;
 		}
 
-
-		un.offset += LIMIT_S;
+		numb.offset += LIMIT_S;
 	}
-	while ( un.count > un.offset );
+	while ( numb.count > numb.offset );
 
-	/*	json_decref(json);*/
 	api_request_pause();
-	fclose( logfile );
+	fclose(logfile);
 	return 0;
 }
 
 int
-cycle_users ( long long id, struct user_numbers * numb, FILE * logfile )
+cycle_users( long long id, struct user_numbers * numb, FILE * logfile )
 {
-	char sub_name[BUFSIZ];
-	char sub_scrname[BUFSIZ];
-	char url[BUFSIZ];
-	struct crl_st wk_crl_st;
-	struct crl_st * cf = &wk_crl_st;
 
-	sprintf( url, "%s/groups.get?v=%s&user_id=%lld&offset=%ld&extended=1%s&count=%d", \
-	         REQ_HEAD, API_VER, id, numb->offset, TKN, LIMIT_S );
+	int retvalue = 0;
 
-	vk_get_request( url, grp.curl, cf );
+	sstring * url = construct_string(2048);
+	stringset( url, "%s/groups.get?v=%s&user_id=%lld&offset=%ld&extended=1%s&count=%d", \
+	    REQ_HEAD, API_VER, id, numb->offset, TKN, LIMIT_S );
 
-	char * r = malloc( cf->size + 1 );
-	sprintf( r, "%s", cf->payload );
-	r[ cf->size ] = 0;
-	if ( cf->payload != NULL )
-		free( cf->payload );
-
-	json_t * json;
-	json_error_t json_err;
-	json = json_loads( r, 0, &json_err );
-	if ( r != NULL )
-		free(r);
+	json_error_t * json_err = NULL;
+	json_t * json = make_request( url, json_err );
+	free_string(url);
 	if ( !json )
 	{
-		fprintf( stderr, "JSON groups.get parsing error.\n%d:%s\n", json_err.line, json_err.text );
-/*		json_decref(json);*/
-		return -2;
+		if ( json_err )
+			fprintf( stderr, "JSON groups.get parsing error.\n%d:%s\n", json_err->line, json_err->text );
+
+		retvalue = -2;
+		goto cycle_users_end_mark;
 	}
 
 	json_auto_t * rsp;
@@ -315,7 +273,9 @@ cycle_users ( long long id, struct user_numbers * numb, FILE * logfile )
 		if ( err_block )
 			fprintf( stderr, "Requst error %lld: %s\n", \
 			         js_get_int( err_block, "error_code" ), js_get_str( err_block, "error_msg" ) );
-		return -3;
+
+		retvalue = -3;
+		goto cycle_users_end_mark;
 	}
 
 	if ( numb->offset == 0 )
@@ -324,15 +284,22 @@ cycle_users ( long long id, struct user_numbers * numb, FILE * logfile )
 		printf( "UID %10lld is subscribed to %ld pages.", id, numb->count );
 	}
 
+	sstring * sub_name = construct_string(2048);
+	sstring * sub_scrname = construct_string(2048);
+
 	size_t index;
 	json_auto_t * json_ar = json_object_get( rsp, "items" );
 	json_array_foreach( json_ar, index, rsp )
 	{
-		sprintf( sub_scrname, "%s", js_get_str( rsp, "screen_name" ) );
-		sprintf( sub_name, "%s", js_get_str( rsp, "name" ) );
-		fprintf( logfile, "%s:::\"%s\"\n", sub_scrname, sub_name );
+		stringset( sub_scrname, "%s", js_get_str( rsp, "screen_name" ) );
+		stringset( sub_name, "%s", js_get_str( rsp, "name" ) );
+		fprintf( logfile, "%s:::\"%s\"\n", sub_scrname->c, sub_name->c );
 	}
-/*	json_decref(json);*/
+
+	free_string(sub_name);
+	free_string(sub_scrname);
+
+	cycle_users_end_mark:
 	api_request_pause();
-	return 0;
+	return retvalue;
 }
