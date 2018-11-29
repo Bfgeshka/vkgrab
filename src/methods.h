@@ -23,7 +23,7 @@ struct data_album
 {
 	long long aid;
 	long long size;
-	char title[BUFSIZ];
+	sstring * title;
 };
 
 struct control_datatypes
@@ -48,20 +48,20 @@ short        user              ( char * );
 size_t       get_albums        ( void );
 void         api_request_pause ( void );
 void         prepare           ( void );
-void         dl_document       ( char *, char *, json_t *, FILE *, long long, long long );
-void         dl_photo          ( char *, char *, json_t *, FILE *, long long, long long );
-void         dl_video          ( char *, char *, json_t *, FILE *, long long, long long );
+void         dl_document       ( sstring *, sstring *, json_t *, FILE *, long long, long long );
+void         dl_photo          ( sstring *, sstring *, json_t *, FILE *, long long, long long );
+void         dl_video          ( sstring *, sstring *, json_t *, FILE *, long long, long long );
 void         fix_filename      ( char * );
 void         destroy_all       ( void );
 void         get_albums_files  ( size_t, char * );
-void         get_comments      ( char *, char *, FILE *, long long );
+void         get_comments      ( sstring *, sstring *, FILE *, long long );
 void         get_docs          ( char * );
 void         get_friends       ( char * );
 void         get_groups        ( char * );
 void         get_videos        ( char * );
 void         get_wall          ( char * );
 void         help_print        ( void );
-void         parse_attachments ( char *, char *, json_t *, FILE *, long long, long long );
+void         parse_attachments ( sstring *, sstring *, json_t *, FILE *, long long, long long );
 
 
 #endif

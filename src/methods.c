@@ -233,7 +233,7 @@ fix_filename( char * dirty )
 }
 
 void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
-dl_photo( char * dirpath, char * filepath, json_t * photo_el, FILE * log, long long post_id, long long comm_id )
+dl_photo( sstring * dirpath, sstring * filepath, json_t * photo_el, FILE * log, long long post_id, long long comm_id )
 {
 	long long pid;
 	json_t * biggest;
@@ -272,18 +272,18 @@ dl_photo( char * dirpath, char * filepath, json_t * photo_el, FILE * log, long l
 	if ( post_id > 0 )
 	{
 		if ( comm_id > 0 )
-			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.jpg", dirpath, acc.id, post_id, comm_id, pid );
+			stringset( filepath, "%s/%lld_%lld:%lld_%lld.jpg", dirpath->c, acc.id, post_id, comm_id, pid );
 		else
-			sprintf( filepath, "%s/%lld_%lld_%lld.jpg", dirpath, acc.id, post_id, pid );
+			stringset( filepath, "%s/%lld_%lld_%lld.jpg", dirpath->c, acc.id, post_id, pid );
 	}
 	else
-		sprintf( filepath, "%s/%lld-%lld.jpg", dirpath, acc.id, pid );
+		stringset( filepath, "%s/%lld-%lld.jpg", dirpath->c, acc.id, pid );
 
-	vk_get_file( json_string_value( biggest ), filepath );
+	vk_get_file( json_string_value( biggest ), filepath->c );
 }
 
 void /* if no post_id, then set it to '-1', FILE * log replace with NULL */
-dl_document( char * dirpath, char * filepath, json_t * doc_el, FILE * log, long long post_id, long long comm_id )
+dl_document( sstring * dirpath, sstring * filepath, json_t * doc_el, FILE * log, long long post_id, long long comm_id )
 {
 	long long did;
 	did = js_get_int( doc_el, "id" );
@@ -293,22 +293,22 @@ dl_document( char * dirpath, char * filepath, json_t * doc_el, FILE * log, long 
 		if ( comm_id > 0 )
 		{
 			fprintf( log, "COMMENT %lld: ATTACH: DOCUMENT %lld (\"%s\")\n", comm_id, did, js_get_str( doc_el, "title" ) );
-			sprintf( filepath, "%s/%lld_%lld:%lld_%lld.%s", dirpath, acc.id, post_id, comm_id, did, js_get_str( doc_el, "ext" ) );
+			stringset( filepath, "%s/%lld_%lld:%lld_%lld.%s", dirpath->c, acc.id, post_id, comm_id, did, js_get_str( doc_el, "ext" ) );
 		}
 		else
 		{
 			fprintf( log, "ATTACH: DOCUMENT FOR %lld: %lld (\"%s\")\n", post_id, did, js_get_str( doc_el, "title" ) );
-			sprintf( filepath, "%s/%lld_%lld_%lld.%s", dirpath, acc.id, post_id, did, js_get_str( doc_el, "ext" ) );
+			stringset( filepath, "%s/%lld_%lld_%lld.%s", dirpath->c, acc.id, post_id, did, js_get_str( doc_el, "ext" ) );
 		}
 	}
 	else
-		sprintf( filepath, "%s/%lld_%lld.%s", dirpath, acc.id, did, js_get_str( doc_el, "ext" ) );
+		stringset( filepath, "%s/%lld_%lld.%s", dirpath->c, acc.id, did, js_get_str( doc_el, "ext" ) );
 
-	vk_get_file( js_get_str( doc_el, "url" ), filepath );
+	vk_get_file( js_get_str( doc_el, "url" ), filepath->c );
 }
 
 void
-dl_video( char * dirpath, char * filepath, json_t * vid_el, FILE * log, long long post_id, long long comm_id )
+dl_video( sstring * dirpath, sstring * filepath, json_t * vid_el, FILE * log, long long post_id, long long comm_id )
 {
 	long long vid;
 	const char * fileurl;
@@ -367,14 +367,14 @@ dl_video( char * dirpath, char * filepath, json_t * vid_el, FILE * log, long lon
 				if ( post_id > 0 )
 				{
 					if ( comm_id > 0 )
-						sprintf( filepath, "%s/%lld:%lld_%lld.mp4", dirpath, post_id, comm_id, vid );
+						stringset( filepath, "%s/%lld:%lld_%lld.mp4", dirpath->c, post_id, comm_id, vid );
 					else
-						sprintf( filepath, "%s/%lld_%lld.mp4", dirpath, post_id, vid );
+						stringset( filepath, "%s/%lld_%lld.mp4", dirpath->c, post_id, vid );
 				}
 				else
-					sprintf( filepath, "%s/%lld.mp4", dirpath, vid );
+					stringset( filepath, "%s/%lld.mp4", dirpath->c, vid );
 
-				vk_get_file( json_string_value( v_link ), filepath );
+				vk_get_file( json_string_value( v_link ), filepath->c );
 			}
 		}
 	}
@@ -382,16 +382,15 @@ dl_video( char * dirpath, char * filepath, json_t * vid_el, FILE * log, long lon
 	{
 		v_block = json_object_get( vid_el, "player" );
 		fileurl = json_string_value( v_block );
+
 		if ( v_block )
-		{
 			if ( post_id < 0 )
 				fprintf( log, " %s", fileurl );
-		}
 	}
 }
 
 void
-parse_attachments( char * dirpath, char * filepath, json_t * input_json, FILE * logfile, long long post_id, long long comm_id )
+parse_attachments( sstring * dirpath, sstring * filepath, json_t * input_json, FILE * logfile, long long post_id, long long comm_id )
 {
 	size_t att_index;
 	json_t * att_elem;
@@ -457,20 +456,21 @@ api_request_pause( void )
 size_t
 get_albums()
 {
-	char addit_request[2048];
+	sstring * addit_request = construct_string(2048);
 	struct crl_st cf;
 
 	/* Wall album is hidden for groups */
 	if ( acc.id < 0 )
-		snprintf( addit_request, 2048, "%s", "&album_ids=-7" );
+		stringset( addit_request, "%s", "&album_ids=-7" );
 	else
-		addit_request[0] = '\0';
+		addit_request->c[0] = '\0';
 
 	/* getting response */
 	sstring * url = construct_string(4096);
-	stringset( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s", REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request );
+	stringset( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s", REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request->c );
 	vk_get_request( url->c, &cf );
 	free_string(url);
+	free_string(addit_request);
 
 	/* parsing json */
 	json_t * json;
@@ -513,7 +513,8 @@ get_albums()
 		{
 			albums[index].aid = js_get_int( el, "id" );
 			albums[index].size = js_get_int( el, "size" );
-			snprintf( albums[index].title, 512, "%s", js_get_str( el, "title" ) );
+			albums[index].title = construct_string(1024);
+			stringset( albums[index].title, "%s", js_get_str( el, "title" ) );
 			photos_count += albums[index].size;
 		}
 	}
@@ -675,16 +676,17 @@ get_id( int argc, char ** argv )
 void
 get_albums_files( size_t arr_size, char * idpath )
 {
-	char alchar[2048];
-	char dirchar[4096];
-	char curpath[2048];
-	char url[2048];
+	sstring * url = construct_string(2048);
+	sstring * curpath = construct_string(2048);
+	sstring * dirchar = construct_string(2048);
+	sstring * alchar = construct_string(2048);
+
 	unsigned i;
 
 	for( i = 0; i < arr_size; ++i )
 	{
 		printf( "Album %u/%zu, id: %lld \"%s\" contains %lld photos.\n",
-		        i + 1, arr_size, albums[i].aid, albums[i].title, albums[i].size );
+		        i + 1, arr_size, albums[i].aid, albums[i].title->c, albums[i].size );
 
 		if ( albums[i].size > 0 )
 		{
@@ -699,38 +701,38 @@ get_albums_files( size_t arr_size, char * idpath )
 				{
 					case  -6:
 					{
-						snprintf( alchar, 2048, "%s", DIRNAME_ALB_PROF );
+						stringset( alchar, "%s", DIRNAME_ALB_PROF );
 						break;
 					}
 
 					case  -7:
 					{
-						snprintf( alchar, 2048, "%s", DIRNAME_ALB_WALL );
+						stringset( alchar, "%s", DIRNAME_ALB_WALL );
 						break;
 					}
 
 					case -15:
 					{
-						snprintf( alchar, 2048, "%s", DIRNAME_ALB_SAVD );
+						stringset( alchar, "%s", DIRNAME_ALB_SAVD );
 						break;
 					}
 
 					default:
 					{
-						snprintf( alchar, 2048, "alb_%lld_(%u:%zu)_(%lld:p)_(%s)",
-					                   albums[i].aid, i + 1, arr_size, albums[i].size, albums[i].title );
+						stringset( alchar, "alb_%lld_(%u:%zu)_(%lld:p)_(%s)",
+						    albums[i].aid, i + 1, arr_size, albums[i].size, albums[i].title->c );
 					}
 				}
 
 				/* creating request */
-				snprintf( url, 2048, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
+				stringset( url, "%s/photos.get?owner_id=%lld&album_id=%lld&photo_sizes=0&offset=%d%s&v=%s",
 				         REQ_HEAD, acc.id, albums[i].aid, offset * LIMIT_A, TOKEN.c, API_VER );
-				vk_get_request( url, &cf );
+				vk_get_request( url->c, &cf );
 
 				/* creating album directory */
-				fix_filename(alchar);
-				snprintf( dirchar, 4096, "%s/%s", idpath, alchar );
-				if ( mkdir( dirchar, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+				fix_filename(alchar->c);
+				stringset( dirchar, "%s/%s", idpath, alchar->c );
+				if ( mkdir( dirchar->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 					if ( errno != EEXIST )
 						fprintf( stderr, "mkdir() error (%d).\n", errno );
 
@@ -765,10 +767,15 @@ get_albums_files( size_t arr_size, char * idpath )
 
 		api_request_pause();
 	}
+
+	free_string(url);
+	free_string(curpath);
+	free_string(dirchar);
+	free_string(alchar);
 }
 
 void
-get_comments( char * dirpath, char * filepath, FILE * logfile, long long post_id  )
+get_comments( sstring * dirpath, sstring * filepath, FILE * logfile, long long post_id  )
 {
 	sstring * url = construct_string(4096);
 	long long offset = 0;
@@ -848,16 +855,17 @@ void
 get_wall( char * idpath )
 {
 	/* Char allocation */
-	char posts_path[2048];
-	char attach_path[2048];
-	char curpath[2048];
-	char url[2048];
+	sstring * url = construct_string(2048);
+	sstring * attach_path = construct_string(2048);
+	sstring * curpath = construct_string(2048);
 
-	snprintf( curpath, 2048, "%s/%s", idpath, DIRNAME_WALL );
-	snprintf( posts_path, 2048, "%s/%s", idpath, FILNAME_POSTS );
-	FILE * posts = fopen( posts_path, "w" );
+	sstring * posts_path = construct_string(2048);
+	stringset( posts_path, "%s/%s", idpath, FILNAME_POSTS );
+	FILE * posts = fopen( posts_path->c, "w" );
+	free_string(posts_path);
 
-	if ( mkdir( curpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+	stringset( curpath, "%s/%s", idpath, DIRNAME_WALL );
+	if ( mkdir( curpath->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
@@ -868,9 +876,9 @@ get_wall( char * idpath )
 	{
 		struct crl_st cf;
 
-		snprintf( url, 2048, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
+		stringset( url, "%s/wall.get?owner_id=%lld&extended=0&count=%d&offset=%lld%s&v=%s",
 		         REQ_HEAD, acc.id, LIMIT_W, offset, TOKEN.c, API_VER );
-		vk_get_request( url, &cf );
+		vk_get_request( url->c, &cf );
 
 		/* Parsing json */
 		json_t * json;
@@ -962,6 +970,10 @@ get_wall( char * idpath )
 	}
 	while( posts_count - offset > 0 );
 
+	free_string(url);
+	free_string(attach_path);
+	free_string(curpath);
+
 	fclose(posts);
 }
 
@@ -969,19 +981,20 @@ void
 get_docs( char * idpath )
 {
 	struct crl_st cf;
-	char dirpath[2048];
-	char doc_path[2048];
+	sstring * dirpath = construct_string(2048);
+	sstring * doc_path = construct_string(2048);
 
 	/* creating document directory */
-	snprintf( dirpath, 2048, "%s/%s", idpath, DIRNAME_DOCS );
-	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+	stringset( dirpath, "%s/%s", idpath, DIRNAME_DOCS );
+	if ( mkdir( dirpath->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* Sending API request docs.get */
-	char url[2048];
-	snprintf( url, 2048, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
-	vk_get_request( url, &cf );
+	sstring * url = construct_string(2048);
+	stringset( url, "%s/docs.get?owner_id=%lld%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
+	vk_get_request( url->c, &cf );
+	free_string(url);
 
 	/* parsing json */
 	json_t * json;
@@ -1123,21 +1136,22 @@ get_groups( char * idpath )
 void
 get_videos( char * idpath )
 {
-	char url[2048];
-	char dirpath[2048];
-	char vidpath[2048];
 	long long vid_count = 0;
+	sstring * url = construct_string(2048);
+	sstring * vidpath = construct_string(2048);
+	sstring * dirpath = construct_string(2048);
 
 	/* creating document directory */
-	snprintf( dirpath, 2048, "%s/%s", idpath, DIRNAME_VIDEO );
-	if ( mkdir( dirpath, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
+	stringset( dirpath, "%s/%s", idpath, DIRNAME_VIDEO );
+	if ( mkdir( dirpath->c, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) != 0 )
 		if ( errno != EEXIST )
 			fprintf( stderr, "mkdir() error (%d).\n", errno );
 
 	/* creating log file with external links */
-	char vid_log_path[2048];
-	snprintf( vid_log_path, 2048, "%s/%s", idpath, FILNAME_VIDEOS );
-	FILE * vid_log = fopen( vid_log_path, "w" );
+	sstring * vid_log_path = construct_string(2048);
+	stringset( vid_log_path, "%s/%s", idpath, FILNAME_VIDEOS );
+	FILE * vid_log = fopen( vid_log_path->c, "w" );
+	free_string(vid_log_path);
 
 	/* Loop init */
 	int offset = 0;
@@ -1147,9 +1161,9 @@ get_videos( char * idpath )
 		struct crl_st cf;
 
 		/* creating request */
-		snprintf( url, 2048, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
+		stringset( url, "%s/video.get?owner_id=%lld&offset=%d&count=%d%s&v=%s",
 		         REQ_HEAD, acc.id, offset * LIMIT_V, LIMIT_V, TOKEN.c, API_VER );
-		vk_get_request( url, &cf );
+		vk_get_request( url->c, &cf );
 
 		/* JSON init */
 		json_t * json;
@@ -1190,6 +1204,10 @@ get_videos( char * idpath )
 
 		times = vid_count / LIMIT_V;
 	}
+
+	free_string(dirpath);
+	free_string(vidpath);
+	free_string(url);
 
 	fclose(vid_log);
 }
