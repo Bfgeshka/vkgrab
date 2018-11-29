@@ -139,7 +139,7 @@ user( char * name )
 	stringset( acc.screenname, "%s", name );
 	acc.usr_ok = 0;
 
-	sstring * url = construct_string(4096);
+	sstring * url = construct_string(2048);
 	stringset( url, "%s/users.get?user_ids=%s&v=%s%s", REQ_HEAD, name, API_VER, TOKEN.c );
 	vk_get_request( url->c, &cf );
 	free_string(url);
@@ -185,7 +185,7 @@ group( char * name )
 	acc.grp_ok = 0;
 	stringset( acc.screenname, "%s", name );
 
-	sstring * url = construct_string(4096);
+	sstring * url = construct_string(2048);
 	stringset( url, "%s/groups.getById?v=%s&group_id=%s%s", REQ_HEAD, API_VER, name, TOKEN.c );
 	vk_get_request( url->c, &cf );
 	free_string(url);
@@ -466,7 +466,7 @@ get_albums()
 		addit_request->c[0] = '\0';
 
 	/* getting response */
-	sstring * url = construct_string(4096);
+	sstring * url = construct_string(2048);
 	stringset( url, "%s/photos.getAlbums?owner_id=%lld&need_system=1%s&v=%s%s", REQ_HEAD, acc.id, TOKEN.c, API_VER, addit_request->c );
 	vk_get_request( url->c, &cf );
 	free_string(url);
@@ -777,7 +777,7 @@ get_albums_files( size_t arr_size, char * idpath )
 void
 get_comments( sstring * dirpath, sstring * filepath, FILE * logfile, long long post_id  )
 {
-	sstring * url = construct_string(4096);
+	sstring * url = construct_string(2048);
 	long long offset = 0;
 	long long posts_count = 0;
 
@@ -1042,7 +1042,7 @@ get_friends( char * idpath )
 	FILE * outptr = fopen( outfl->c, "w" );
 	free_string(outfl);
 
-	sstring * url = construct_string(4096);
+	sstring * url = construct_string(2048);
 	stringset( url, "%s/friends.get?user_id=%lld&order=domain&fields=domain%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
 	vk_get_request( url->c, &cf );
 	free_string(url);
@@ -1092,7 +1092,7 @@ get_groups( char * idpath )
 	FILE * outptr = fopen( outfl->c, "w" );
 	free_string(outfl);
 
-	sstring * url = construct_string(4096);
+	sstring * url = construct_string(2048);
 	stringset( url, "%s/groups.get?user_id=%lld&extended=1%s&v=%s", REQ_HEAD, acc.id, TOKEN.c, API_VER );
 	vk_get_request( url->c, &cf );
 	free_string(url);
