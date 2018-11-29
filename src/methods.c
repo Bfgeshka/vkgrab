@@ -1,3 +1,4 @@
+#include <curl/curl.h>
 #include <errno.h>
 #include <jansson.h>
 #include <stdlib.h>
@@ -10,10 +11,30 @@
 #include "curl_req.h"
 #include "utils.h"
 
-sstring TOKEN;
-
 void
 prepare( void )
+{
+	/* curl handler initialisatiion */
+	extern CURL * curl;
+	curl = curl_easy_init();
+	if ( !curl )
+	{
+		fprintf( stderr, "Curl initialisation error.\n" );
+		exit(EXIT_FAILURE);
+	}
+
+	set_token();
+
+	/* Account struct */
+	acc.screenname = construct_string(128);
+	acc.usr_fname = construct_string(128);
+	acc.usr_lname = construct_string(128);
+	acc.grp_name = construct_string(128);
+	acc.grp_type = construct_string(64);
+}
+
+void
+set_token ( void )
 {
 	/* Token */
 	newstring( &TOKEN, 512 );
@@ -26,13 +47,6 @@ prepare( void )
 		stringset( &TOKEN, "%s", CONSTTOKEN->c );
 
 	free_string(CONSTTOKEN);
-
-	/* Account struct */
-	acc.screenname = construct_string(128);
-	acc.usr_fname = construct_string(128);
-	acc.usr_lname = construct_string(128);
-	acc.grp_name = construct_string(128);
-	acc.grp_type = construct_string(64);
 }
 
 void
@@ -43,6 +57,9 @@ destroy_all( void )
 	free_string(acc.usr_lname);
 	free_string(acc.grp_name);
 	free_string(acc.grp_type);
+
+	extern CURL * curl;
+	curl_easy_cleanup(curl);
 }
 
 int

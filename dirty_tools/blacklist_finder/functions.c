@@ -10,8 +10,6 @@
 #include "../../src/methods.h"
 #include "../../src/utils.h"
 
-char TKN[BUFSIZ] = TOKEN_HEAD;
-
 int
 group_id( int argc, char ** argv )
 {
@@ -29,24 +27,22 @@ group_id( int argc, char ** argv )
 	else if ( argc == 2 )
 	{
 		if ( argv[1][0] == '-' )
-		{
-			if ( argv[1][1] == 'h' )
-				bf_help_print();
-
-			else if ( argv[1][1] == 'T' )
-				fprintf( stdout,
-				         "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
-				         APPLICATION_ID, PERMISSIONS );
-
-			else
+			switch( argv[1][1] )
 			{
-				fputs( "Unknown argument, abort.", stderr );
-				return -1;
+				case 'h':
+					bf_help_print();
+					return 0;
+
+				case 'T':
+					fprintf( stdout,
+					    "https://oauth.vk.com/authorize?client_id=%d&scope=%s&display=page&response_type=token\n",
+					    APPLICATION_ID, PERMISSIONS );
+					return 0;
+
+				default:
+					fputs( "Unknown argument, abort.", stderr );
+					return -1;
 			}
-
-			return 0;
-		}
-
 		else
 			stringset( grp.name_scrn, "%s", argv[1] );
 	}
@@ -57,36 +53,41 @@ group_id( int argc, char ** argv )
 		{
 			if ( argv[t][0] == '-' )
 			{
-				if ( argv[t][1] == 't' )
+				switch ( argv[t][1] )
 				{
-					if ( strlen( TKN ) == strlen( TOKEN_HEAD ) )
-						strcat( TKN, argv[t+1] );
-					else
+					case 't':
 					{
-						if ( atoi( argv[t+1] ) == 0 )
-							sprintf( TKN, "%c", '\0' );
+						if ( argv[t+1] != NULL )
+							if ( atoi(argv[t+1]) != 0 )
+								stringset( &TOKEN, "%s%s", TOKEN.c, argv[t+1] );
+							else
+								stringset( &TOKEN, "%c", '\0' );
 						else
-							sprintf( TKN, "%s%s", TOKEN_HEAD, argv[t+1] );
+						{
+							fputs( "Bad argument, abort.", stderr );
+							return -1;
+						}
+
+						break;
 					}
-				}
-				if ( argv[t][1] == 'h' )
-				{
-					bf_help_print();
-					return 0;
+
+					case 'h':
+						bf_help_print();
+						return -1;
+
+					default:
+						fputs( "Bad argument, abort.", stderr );
+						return -1;
 				}
 			}
-
 			else
 				stringset( grp.name_scrn, "%s", argv[t] );
 		}
 
-	if ( strlen(TKN) != strlen(CONST_TOKEN) )
-		sprintf( TKN, "%s", CONST_TOKEN );
-
 	/* Requesting data */
 	sstring * url = construct_string(2048);
 	stringset( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
-	    REQ_HEAD, API_VER, grp.name_scrn->c, offset, TKN );
+	    REQ_HEAD, API_VER, grp.name_scrn->c, offset, TOKEN.c );
 
 	json_error_t * json_err = NULL;
 	json_t * json = make_request( url, json_err );
@@ -130,12 +131,11 @@ group_memb( long long * ids )
 
 	json_auto_t * rsp;
 
-
 	do
 	{
 		sstring * url = construct_string(2048);
 		stringset( url, "%s/groups.getMembers?v=%s&group_id=%s&offset=%lld%s", \
-		    REQ_HEAD, API_VER, grp.name_scrn->c, offset, TKN );
+		    REQ_HEAD, API_VER, grp.name_scrn->c, offset, TOKEN.c );
 
 		json_error_t * json_err = NULL;
 		json_t * json = make_request( url, json_err );
@@ -181,7 +181,7 @@ bf_help_print()
 	puts("Options:");
 	puts("  -h             show help");
 	puts("  -T             generate link for getting a token");
-	puts("  -t TKN       give a valid TKN without header \"&access_token=\". If TKN is zero then anonymous access given");
+	puts("  -t TOKEN       give a valid TOKEN without header \"&access_token=\". If TOKEN is zero then anonymous access given");
 }
 
 int
@@ -191,7 +191,7 @@ user_subs( long long id, sstring * output_file )
 	/* Requesting data */
 	sstring * url = construct_string(2048);
 	stringset( url, "%s/users.get?v=%s&user_id=%lld&fields=screen_name,last_seen%s", \
-	    REQ_HEAD, API_VER, id, TKN );
+	    REQ_HEAD, API_VER, id, TOKEN.c );
 
 	json_error_t * json_err = NULL;
 	json_t * json = make_request( url, json_err );
@@ -250,7 +250,7 @@ cycle_users( long long id, struct user_numbers * numb, FILE * logfile )
 
 	sstring * url = construct_string(2048);
 	stringset( url, "%s/groups.get?v=%s&user_id=%lld&offset=%ld&extended=1%s&count=%d", \
-	    REQ_HEAD, API_VER, id, numb->offset, TKN, LIMIT_S );
+	    REQ_HEAD, API_VER, id, numb->offset, TOKEN.c, LIMIT_S );
 
 	json_error_t * json_err = NULL;
 	json_t * json = make_request( url, json_err );

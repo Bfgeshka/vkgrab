@@ -37,6 +37,7 @@ struct control_datatypes
 
 long long photos_count;
 struct data_album * albums;
+sstring TOKEN;
 
 json_t * make_request ( sstring *, json_error_t * );
 const char * js_get_str        ( json_t *, char * );
@@ -63,6 +64,7 @@ void         get_videos        ( char * );
 void         get_wall          ( char * );
 void         help_print        ( void );
 void         parse_attachments ( sstring *, sstring *, json_t *, FILE *, long long, long long );
+void         set_token         ( void );
 
 
 #endif

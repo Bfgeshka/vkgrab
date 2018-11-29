@@ -1,4 +1,3 @@
-#include <curl/curl.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,15 +8,6 @@
 int
 main( int argc, char ** argv )
 {
-	/* curl handler initialisatiion */
-	extern CURL * curl;
-	curl = curl_easy_init();
-	if ( !curl )
-	{
-		fprintf( stderr, "Curl initialisation error.\n" );
-		return 1;
-	}
-
 	/* Define downloaded datatypes */
 	types.docmt = DOGET_DOC;
 	types.pictr = DOGET_PIC;
@@ -70,6 +60,5 @@ main( int argc, char ** argv )
 
 	free(output_dir.c);
 	destroy_all();
-	curl_easy_cleanup(curl);
 	return 0;
 }

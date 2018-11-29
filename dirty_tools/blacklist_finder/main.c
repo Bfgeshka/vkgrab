@@ -9,6 +9,8 @@
 int
 main( int argc, char ** argv )
 {
+	set_token();
+
 	sstring * output_dir = construct_string(2048);
 	sstring * output_file = construct_string(2048);
 	long long * ids;
