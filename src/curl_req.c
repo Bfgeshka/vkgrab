@@ -192,73 +192,73 @@ cp_file( const char * to, const char * from )
 size_t
 vk_get_file( const char * url, const char * filepath )
 {
-	if ( curl )
+	if ( !curl )
+		exit(EXIT_FAILURE);
+
+	unsigned spaces_offset = utf8_char_offset(filepath);
+	unsigned term_width = get_width();
+
+	/* skip downloading if file exists */
+	errno = 0;
+	long long file_size = 0;
+	int err;
+	FILE * fr = fopen( filepath, "r" );
+	err = errno;
+
+	if ( fr != NULL )
 	{
-		unsigned spaces_offset = utf8_char_offset(filepath);
-		unsigned term_width = get_width();
+		fclose(fr);
+		struct stat fst;
+		if (  stat( filepath, &fst ) != -1 )
+			file_size = (long long)fst.st_size;
 
-		/* skip downloading if file exists */
-		errno = 0;
-		long long file_size = 0;
-		int err;
-		FILE * fr = fopen( filepath, "r" );
-		err = errno;
-
-		if ( fr != NULL )
+		if ( file_size > 0 )
 		{
-			fclose(fr);
-			struct stat fst;
-			if (  stat( filepath, &fst ) != -1 )
-				file_size = (long long)fst.st_size;
-
-			if ( file_size > 0 )
-			{
-				printf( "\r\b%-*s", term_width, filepath );
-				while ( spaces_offset > 0 )
-				{
-					--spaces_offset;
-					putchar(' ');
-				}
-
-				printf( "%s", "\b\b\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n" );
-
-				return 0;
-			}
-		}
-
-		if ( err == ENOENT || file_size == 0 )
-		{
-			fflush(stdout);
-			FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
-			curl_easy_setopt( curl, CURLOPT_URL, url );
-			curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_file );
-			curl_easy_setopt( curl, CURLOPT_WRITEDATA, fw );
-			curl_easy_setopt( curl, CURLOPT_VERBOSE, CRL_VERBOSITY );
-			curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
-			curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 2 );
-			curl_easy_setopt( curl, CURLOPT_NOPROGRESS, 0 );
-			curl_easy_setopt( curl, CURLOPT_PROGRESSFUNCTION, progress_func );
-			CURLcode code;
-			code = curl_easy_perform(curl);
-
-			if ( code != CURLE_OK )
-			{
-				fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror(code), url );
-				return 1;
-			}
-
-			curl_easy_reset(curl);
-			fclose(fw);
-			cp_file( filepath, TMP_CURL_FILENAME );
-
 			printf( "\r\b%-*s", term_width, filepath );
 			while ( spaces_offset > 0 )
 			{
 				--spaces_offset;
 				putchar(' ');
 			}
-			printf( "%s", "\b\b\b\b\b\b\b\033[01;32m[OK]\033[00m\n" );
+
+			printf( "%s", "\b\b\b\b\b\b\b\b\033[00;36m[SKIP]\033[00m\n" );
+
+			return 0;
 		}
+	}
+
+	if ( err == ENOENT || file_size == 0 )
+	{
+		fflush(stdout);
+		FILE * fw = fopen( TMP_CURL_FILENAME, "w" );
+		curl_easy_setopt( curl, CURLOPT_URL, url );
+		curl_easy_setopt( curl, CURLOPT_WRITEFUNCTION, write_file );
+		curl_easy_setopt( curl, CURLOPT_WRITEDATA, fw );
+		curl_easy_setopt( curl, CURLOPT_VERBOSE, CRL_VERBOSITY );
+		curl_easy_setopt( curl, CURLOPT_FOLLOWLOCATION, 1 );
+		curl_easy_setopt( curl, CURLOPT_MAXREDIRS, 2 );
+		curl_easy_setopt( curl, CURLOPT_NOPROGRESS, 0 );
+		curl_easy_setopt( curl, CURLOPT_PROGRESSFUNCTION, progress_func );
+		CURLcode code;
+		code = curl_easy_perform(curl);
+
+		if ( code != CURLE_OK )
+		{
+			fprintf( stderr, "GET error: %s [%s]\n", curl_easy_strerror(code), url );
+			return 1;
+		}
+
+		curl_easy_reset(curl);
+		fclose(fw);
+		cp_file( filepath, TMP_CURL_FILENAME );
+
+		printf( "\r\b%-*s", term_width, filepath );
+		while ( spaces_offset > 0 )
+		{
+			--spaces_offset;
+			putchar(' ');
+		}
+		printf( "%s", "\b\b\b\b\b\b\b\033[01;32m[OK]\033[00m\n" );
 	}
 
 	return 0;
