@@ -38,6 +38,7 @@ struct control_datatypes
 long long photos_count;
 struct data_album * albums;
 
+json_t * make_request ( sstring *, json_error_t * );
 const char * js_get_str        ( json_t *, char * );
 int          readable_date     ( long long, FILE * );
 int          make_dir          ( sstring *, long long );
